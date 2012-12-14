@@ -25,35 +25,24 @@ main() -> #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}.
 
 title() -> "Login".
 
-content() ->
-    wf:wire(submit, username, #validate{attach_to = username_status, validators = [#is_required{text = "Required"}]}),
-    wf:wire(submit, password, #validate{attach_to = password_status, validators = [#is_required{text = "Required"}]}),
+content() -> 
+    ResetButton = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Login').button('refresh')"}},
     [
-        #h1{text = "Login"},
-        #wfd_table{rows = [
-            #tablerow{cells = [
-                #tablecell{colspan = 3, body = #flash{}}
-            ]},
-            #tablerow{cells = [
-                #tablecell{class = "form-labels", text = "Username:"},
-                #tablecell{body = #textbox{id = username, next = password}},
-                #tablecell{body = #span{id = username_status}}
-            ]},
-            #tablerow{cells = [
-                #tablecell{class = "form-labels", text = "Password:"},
-                #tablecell{body = #password{id = password, next = submit}},
-                #tablecell{body = #span{id = password_status}}
-            ]},
-            #tablerow{cells = [#tablecell{}, #tablecell{body = #checkbox{id = remember_me, text = "Remember Me"}}]},
-            #tablerow{cells = #tablecell{id = blank_line}},
-            #tablerow{cells = [
-                #tablecell{class =  "form-submit", colspan = 3, body = [#br{}, #button{id = submit, text = "Login", postback = login}]}
-            ]}
-        ]}
+        #p{id = blah},
+        #label{for = "username", text = "Username:", class = "ui-hidden-accessible"},
+        #textbox{id = username, html_id = "username", placeholder = "Username", next = password, actions = ResetButton},
+        #label{for = "password", text = "Password:", class = "ui-hidden-accessible"},
+        #password{id = password, html_id = "password", placeholder = "Password", next = submit, actions = ResetButton},
+        #checkbox{id = remember_me, text = "Remember Me"},
+        #button{id = submit, text = "Login", postback = login, actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Checking...').button('refresh')"}}}
     ].
 
 event(login) ->
+    timer:sleep(3000),
+    %wf:wire(#script{script = "$('.ui-dialog').dialog('close')"}),
+
     [Username, Password] = wf:mq([username, password]),
+
 
     RememberMe = case wf:q(remember_me) of
         "on" -> true;
@@ -68,18 +57,7 @@ event(login) ->
 
     case wfd_user_server:authenticate(Username, Password, RememberMe, OldRememberMeSeries) of
         {error, bad_auth} ->
-            % close any existing notification flashes
-            case wf:state(flash_id) of
-                undefined ->
-                    ok;
-                OldFlashId ->
-                    wf:wire(OldFlashId, #hide{effect = blind, speed = 100})
-            end,
-
-            % remember the id of the message that is about to be displayed
-            FlashId = wf:temp_id(),
-            wf:state(flash_id, FlashId),
-            wf:flash(FlashId, "Invalid username or password.");
+            wf:wire(#script{script = "$(obj('submit')).attr('value', 'Invalid Username or Password').button('refresh')"});
 
         {ok, Roles, RememberMeToken} ->
             wf:user(Username),

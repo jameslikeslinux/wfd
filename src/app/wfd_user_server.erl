@@ -19,7 +19,7 @@
 -module(wfd_user_server).
 -author("James Lee <jlee@thestaticvoid.com>").
 -behaviour(gen_server).
--export([start_link/0, register_user/4, validate_email/2, authenticate/4, remember_me_login/2, logout/2, user_exists/1, email_registered/1, remove_old_remember_me_tokens/0]).
+-export([start_link/0, register_user/3, validate_email/2, authenticate/4, remember_me_login/2, logout/2, user_exists/1, email_registered/1, remove_old_remember_me_tokens/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("stdlib/include/qlc.hrl").
@@ -31,8 +31,8 @@
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-register_user(Username, Password, Name, Email) ->
-    gen_server:call(?MODULE, {register_user, Username, Password, Name, Email}).
+register_user(Username, Password, Email) ->
+    gen_server:call(?MODULE, {register_user, Username, Password, Email}).
 
 validate_email(Username, ValidationToken) ->
     gen_server:call(?MODULE, {validate_email, Username, ValidationToken}).
@@ -63,10 +63,10 @@ init([]) ->
     mnesia:create_table(wfd_user, [{disc_copies, [node()]}, {attributes, record_info(fields, wfd_user)}]),
     {ok, []}.
 
-handle_call({register_user, Username, Password, Name, Email}, _From, State) ->
+handle_call({register_user, Username, Password, Email}, _From, State) ->
     {ok, Salt} = bcrypt:gen_salt(),
     {ok, PasswordHash} = bcrypt:hashpw(Password, Salt),
-    User = #wfd_user{username = Username, password_hash = PasswordHash, name = Name, email = Email},
+    User = #wfd_user{username = Username, password_hash = PasswordHash, email = Email},
 
     F = fun() ->
         case {get_user(Username), get_user_by_email(Email)} of

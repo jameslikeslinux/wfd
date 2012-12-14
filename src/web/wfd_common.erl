@@ -69,8 +69,8 @@ event(resend_validation_email) ->
     wf:replace(flash_content, #panel{id = flash_content, body = "A new validation e-mail has been sent to you."}).
 
 send_validation_email(User) ->
-    wfd_utils:send_email(User#wfd_user.name, User#wfd_user.email, "Validate Your E-mail Address",
-        hd(string:tokens(User#wfd_user.name, " ")) ++ ",\n"
+    wfd_utils:send_email(User#wfd_user.username, User#wfd_user.email, "Validate Your E-mail Address",
+        "Hi " ++ User#wfd_user.username ++ ",\n"
         "\n"
         "Before you can continue using pkgblender, you must validate your e-mail\n"
         "address by clicking the following link:\n"

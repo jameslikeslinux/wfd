@@ -38,11 +38,6 @@ content() ->
         #custom{text = "Must have at least one upper-case character", function = fun matches/2, tag = "[A-Z]"},
         #custom{text = "Must have at least one digit", function = fun matches/2, tag = "[0-9]"}
     ]}),
-    wf:wire(submit, confirm_password, #validate{attach_to = confirm_password_status, validators = [
-        #is_required{text = "Required"},
-        #confirm_password{text = "Passwords must match", password = password}
-    ]}),
-    wf:wire(submit, name, #validate{attach_to = name_status, validators = [#is_required{text = "Required"}]}),
     wf:wire(submit, email, #validate{attach_to = email_status, validators = [
         #is_required{text = "Required"},
         #is_email{text = "Not a valid e-mail address"},
@@ -61,18 +56,8 @@ content() ->
             ]},
             #tablerow{cells = [
                 #tablecell{class = "form-labels", body = ["Password:", #br{}, #span{class = "hint", text = "(≥ 8 characters, 1 a-z, 1 A-Z, 1 0-9)"}]},
-                #tablecell{body = #password{id = password, next = confirm_password}},
+                #tablecell{body = #password{id = password, next = email}},
                 #tablecell{body = #span{id = password_status}}
-            ]},
-            #tablerow{cells = [
-                #tablecell{class = "form-labels", text = "Confirm Password:"},
-                #tablecell{body = #password{id = confirm_password, next = name}},
-                #tablecell{body = #span{id = confirm_password_status}}
-            ]},
-            #tablerow{cells = [
-                #tablecell{class = "form-labels", body = ["Full Name:", #br{}, #span{class = "hint", text = "(How it will be displayed on this site)"}]},
-                #tablecell{body = #textbox{id = name, next = email}},
-                #tablecell{body = #span{id = name_status}}
             ]},
             #tablerow{cells = [
                 #tablecell{class = "form-labels", text = "E-mail Address:"},
@@ -87,8 +72,8 @@ content() ->
     ].
 
 event(register) ->
-    [Username, Password, Name, Email] = wf:mq([username, password, name, email]),
-    case wfd_user_server:register_user(Username, Password, Name, Email) of
+    [Username, Password, Email] = wf:mq([username, password, email]),
+    case wfd_user_server:register_user(Username, Password, Email) of
         {ok, User} ->
             wfd_common:send_validation_email(User),
             wf:flash("Registered successfully!");
