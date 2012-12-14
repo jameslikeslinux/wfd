@@ -24,10 +24,6 @@ main() -> #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}.
 
 title() -> "Registration Successful".
 
-header() -> #panel{data_fields = [{role, header}], body = [
-    #h1{text = "Registration Successful"}
-]}.
-
 content() -> [
     #p{text = "Your account was created successfully!  Before you can use this app, you must validate your e-mail address by clicking the link sent to your inbox."},
     #link{url = "/", text = "Continue", mobile_target = true, data_fields = [{role, button}]}
