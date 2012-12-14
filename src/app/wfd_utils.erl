@@ -18,7 +18,8 @@
 
 -module(wfd_utils).
 -author("James Lee <jlee@thestaticvoid.com>").
--export([run_cmd/1, send_email/4]).
+-export([run_cmd/1, send_email/4, protect_page/0]).
+-include_lib("nitrogen_core/include/wf.hrl").
 
 run_cmd(Cmd) ->
     [Status|RevOutput] = lists:reverse(string:tokens(os:cmd(Cmd ++ "; echo $?"), "\n")),
@@ -33,3 +34,21 @@ send_email(ToName, ToEmail, Subject, Message) ->
         "Subject: [pkgblender] " ++ Subject ++ "\r\n"
         "\r\n" ++
         Message}, [{relay, "localhost"}, {port, 25}]).
+
+protect_page() ->
+    case wf:user() of
+        undefined ->
+            case wf:session_default(login_dialog_raised, false) of
+                false ->
+                    wf:session(login_dialog_raised, true),
+                    wf:wire(#script{script = "$('#login_dialog').click()"}),
+                    #template{file = code:priv_dir(wfd) ++ "/templates/login.html"};
+
+                true ->
+                    wf:session(login_dialog_raised, false),
+                    #template{file = code:priv_dir(wfd) ++ "/templates/unauthorized.html"}
+            end;
+
+        _User ->
+            #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}
+    end.

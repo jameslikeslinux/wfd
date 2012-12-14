@@ -70,6 +70,7 @@ event(register) ->
     [Username, Password, Email] = wf:mq([username, password, email]),
     case wfd_user_server:register_user(Username, Password, Email) of
         {ok, User} ->
+            wfd_login:event(login),
             wfd_common:send_validation_email(User),
             wf:wire(#script{script = "$(obj('success_dialog')).click()"});
         error ->

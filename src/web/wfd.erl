@@ -24,9 +24,18 @@ main() -> #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}.
 
 title() -> "Home".
 
-content() -> [
-    #panel{data_fields = [{role, controlgroup}], body = [
-        #link{url = "/login", text = "Login", mobile_target = true, mobile_dialog = true, data_fields = [{role, button}]},
-        #link{url = "/register", text = "Register", mobile_target = true, data_fields = [{role, button}]}
-    ]}
-].
+content() -> 
+    Actions = case wf:user() of
+        undefined -> [
+            #link{url = "/login", text = "Login", mobile_target = true, mobile_dialog = true, data_fields = [{role, button}]},
+            #link{url = "/register", text = "Register", mobile_target = true, data_fields = [{role, button}]}
+        ];
+
+        _User -> [
+            #link{url = "/logout", text = "Logout", mobile_target = true, data_fields = [{role, button}]}
+        ]
+    end,
+
+    [
+        #panel{data_fields = [{role, controlgroup}], body = Actions}
+    ].

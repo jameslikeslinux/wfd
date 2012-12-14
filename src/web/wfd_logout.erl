@@ -18,6 +18,7 @@
 
 -module(wfd_logout).
 -compile(export_all).
+-include_lib("nitrogen_core/include/wf.hrl").
 
 main() ->
     case wf:user() of
@@ -32,4 +33,8 @@ main() ->
             wf:cookie(remember_me_token, "", "/", 0),
             wf:logout()
     end,
-    wf:redirect("/").
+
+    wf:wire(#script{script = "$.mobile.changePage('/')"}),
+    #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}.
+
+title() -> "Logout".
