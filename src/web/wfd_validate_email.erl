@@ -21,10 +21,20 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("wfd.hrl").
 
-main() ->
+main() -> 
     case wf:user() of
         undefined ->
-            wf:redirect_to_login("/login");
+            case wf:session_default(login_dialog_raised, false) of
+                false ->
+                    wf:session(login_dialog_raised, true),
+                    wf:wire(#script{script = "$('#login_dialog').click()"}),
+                    #template{file = code:priv_dir(wfd) ++ "/templates/login.html"};
+
+                true ->
+                    wf:session(login_dialog_raised, false),
+                    #template{file = code:priv_dir(wfd) ++ "/templates/unauthorized.html"}
+            end;
+
         _User ->
             #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}
     end.

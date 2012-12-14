@@ -1,0 +1,21 @@
+@media only screen and (min-width: 480px){
+    .ui-content {
+        width: 480px;
+        margin: 0 auto !important;
+        position: relative !important;
+    }
+}
+
+.LV_validation_message {
+    display: block;
+    text-align: right;
+    font-size: small;
+}
+
+.LV_invalid {
+    color: #aa0000;
+}
+
+.hint {
+    font-size: small;
+}

@@ -1,5 +1,5 @@
 %%%
-%%% wfd.erl
+%%% wfd_register_success.erl
 %%% Copyright (C) 2012 James Lee
 %%% 
 %%% This program is free software: you can redistribute it and/or modify
@@ -16,17 +16,19 @@
 %%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %%%
 
--module(wfd).
+-module(wfd_register_success).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
 
 main() -> #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}.
 
-title() -> "Home".
+title() -> "Registration Successful".
+
+header() -> #panel{data_fields = [{role, header}], body = [
+    #h1{text = "Registration Successful"}
+]}.
 
 content() -> [
-    #panel{data_fields = [{role, controlgroup}], body = [
-        #link{url = "/login", text = "Login", mobile_target = true, mobile_dialog = true, data_fields = [{role, button}]},
-        #link{url = "/register", text = "Register", mobile_target = true, data_fields = [{role, button}]}
-    ]}
+    #p{text = "Your account was created successfully!  Before you can use this app, you must validate your e-mail address by clicking the link sent to your inbox."},
+    #link{url = "/", text = "Continue", mobile_target = true, data_fields = [{role, button}]}
 ].

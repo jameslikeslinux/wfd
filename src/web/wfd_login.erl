@@ -25,10 +25,15 @@ main() -> #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}.
 
 title() -> "Login".
 
+header() -> #panel{data_fields = [{role, header}], body = [
+    #h1{text = "Login"}
+]}.
+
 content() -> 
+    wf:wire(submit, username, #validate{validators = #is_required{text = "Required"}}),
+    wf:wire(submit, password, #validate{validators = #is_required{text = "Required"}}),
     ResetButton = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Login').button('refresh')"}},
     [
-        #p{id = blah},
         #label{for = "username", text = "Username:", class = "ui-hidden-accessible"},
         #textbox{id = username, html_id = "username", placeholder = "Username", next = password, actions = ResetButton},
         #label{for = "password", text = "Password:", class = "ui-hidden-accessible"},
@@ -38,9 +43,6 @@ content() ->
     ].
 
 event(login) ->
-    timer:sleep(3000),
-    %wf:wire(#script{script = "$('.ui-dialog').dialog('close')"}),
-
     [Username, Password] = wf:mq([username, password]),
 
 
@@ -57,6 +59,7 @@ event(login) ->
 
     case wfd_user_server:authenticate(Username, Password, RememberMe, OldRememberMeSeries) of
         {error, bad_auth} ->
+            timer:sleep(1000),
             wf:wire(#script{script = "$(obj('submit')).attr('value', 'Invalid Username or Password').button('refresh')"});
 
         {ok, Roles, RememberMeToken} ->
@@ -68,16 +71,5 @@ event(login) ->
                 {Series, Value, _LastUsed} ->
                     wf:cookie(remember_me_token, Series ++ ":" ++ Value, "/", ?REMEMBER_ME_TTL)
             end,
-            redirect_from_login("/")
-    end.
-
-%% modified from action_redirect.erl
-%% required because requests are rewritten: / -> /wfd
-%% XXX: this is a hack
-%% remove "/wfd" from the URI
-redirect_from_login(DefaultUrl) ->  
-    PickledURI = wf:q(x),
-    case wf:depickle(PickledURI) of
-        undefined -> action_redirect:redirect(DefaultUrl);
-        Other -> action_redirect:redirect(re:replace(Other, "/wfd", "", [{return, list}]))
+            wf:wire(#script{script = "$('.ui-dialog').dialog('close')"})
     end.
