@@ -21,7 +21,7 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("wfd.hrl").
 
-main() -> wfd_utils:protect_page().
+main() -> wfd_common:protected_page([]).
 
 title() -> "E-mail Address Validation".
 
@@ -30,15 +30,15 @@ content() ->
         {ok, User} ->
             lists:foreach(fun(Role) -> wf:role(Role, true) end, User#wfd_user.roles),
             [#h1{text = "Successfully Validated"},
-             #p{class = "notification", body = "You have successfully validated your e-mail address. Thank you."}];
+             #p{text = "You have successfully validated your e-mail address. Thank you."}];
         {bad_validation_token, User} ->
             wfd_common:send_validation_email(User),
             [#h1{text = "Invalid Validation Token"},
-             #p{class = "notification", body = "You have supplied an invalid e-mail validation token.  You have been sent a new validation e-mail.  Be sure to copy the link carefully."}];
+             #p{text = "You have supplied an invalid e-mail validation token.  You have been sent a new validation e-mail.  Be sure to copy the link carefully."}];
         email_already_registered ->
             [#h1{text = "Address Already Registered"},
-             #p{class = "notification", body = "Somebody else has already registered the same e-mail address.  Please change yours in the <a href='/account_settings'>account settings</a>."}];
+             #p{text = "Somebody else has already registered the same e-mail address.  Please change yours in the <a href='/settings'>account settings</a>."}];
         already_validated ->
             [#h1{text = "Already Validated"},
-             #p{class = "notification", body = "You have already validated your e-mail address.  Thanks!"}]
-    end.
+             #p{text = "You have already validated your e-mail address.  Thanks!"}]
+    end ++ [#br{}, #link{url = "/", text = "Continue", mobile_target = true, data_fields = [{role, button}]}].

@@ -1,5 +1,5 @@
 %%%
-%%% wfd_utils.erl
+%%% wfd_unit_server.erl
 %%% Copyright (C) 2012 James Lee
 %%% 
 %%% This program is free software: you can redistribute it and/or modify
@@ -16,20 +16,38 @@
 %%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %%%
 
--module(wfd_utils).
+-module(wfd_unit_server).
 -author("James Lee <jlee@thestaticvoid.com>").
--export([run_cmd/1, send_email/4]).
+-behaviour(gen_server).
+-export([start_link/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
-run_cmd(Cmd) ->
-    [Status|RevOutput] = lists:reverse(string:tokens(os:cmd(Cmd ++ "; echo $?"), "\n")),
-    Output = lists:reverse(RevOutput),
-    error_logger:info_msg("Ran command: ~p~nExit status: ~s~nOutput:~n~s", [Cmd, Status, [["    ", O, $\n] || O <- Output]]),
-    {list_to_integer(Status), Output}.
+-include_lib("stdlib/include/qlc.hrl").
+-include("wfd.hrl").
 
-send_email(ToName, ToEmail, Subject, Message) ->
-    gen_smtp_client:send({"jlee@thestaticvoid.org", [ToEmail],
-        "From: What's for Dinner? <jlee@thestaticvoid.com>\r\n"
-        "To: " ++  ToName ++ " <" ++ ToEmail ++ ">\r\n"
-        "Subject: [What's for Dinner?] " ++ Subject ++ "\r\n"
-        "\r\n" ++
-        Message}, [{relay, "localhost"}, {port, 25}]).
+-record(state, {unit_graph}).
+
+%%
+%% API
+%%
+start_link() ->
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+
+%%
+%% Callbacks
+%%
+init([]) ->
+    UnitGraph = digraph:new(),
+    {ok, #state{unit_graph = UnitGraph}}.
+
+handle_call(_Msg, _From, State) -> {noreply, State}.
+
+handle_cast(_Msg, State) -> {noreply, State}.
+handle_info(_Info, State) -> {noreply, State}.
+terminate(_Reason, _State) -> ok.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
+
+
+%%
+%% Private Functions
+%%

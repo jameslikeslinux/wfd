@@ -19,7 +19,7 @@
 -module(wfd_user_server).
 -author("James Lee <jlee@thestaticvoid.com>").
 -behaviour(gen_server).
--export([start_link/0, register_user/3, validate_email/2, authenticate/4, remember_me_login/2, logout/2, user_exists/1, email_registered/1, remove_old_remember_me_tokens/0]).
+-export([start_link/0, register_user/3, update_password/2, validate_email/2, update_email/2, authenticate/4, check_password/2, remember_me_login/2, logout/2, user_exists/1, email_registered/1, remove_old_remember_me_tokens/0, get_email/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("stdlib/include/qlc.hrl").
@@ -34,11 +34,20 @@ start_link() ->
 register_user(Username, Password, Email) ->
     gen_server:call(?MODULE, {register_user, Username, Password, Email}).
 
+update_password(Username, NewPassword) ->
+    gen_server:call(?MODULE, {update_password, Username, NewPassword}).
+
 validate_email(Username, ValidationToken) ->
     gen_server:call(?MODULE, {validate_email, Username, ValidationToken}).
 
+update_email(Username, NewEmail) ->
+    gen_server:call(?MODULE, {update_email, Username, NewEmail}).
+
 authenticate(Username, Password, RememberMe, OldRememberMeSeries) ->
     gen_server:call(?MODULE, {authenticate, Username, Password, RememberMe, OldRememberMeSeries}).
+
+check_password(Username, Password) ->
+    gen_server:call(?MODULE, {check_password, Username, Password}).
 
 remember_me_login(Series, Token) ->
     gen_server:call(?MODULE, {remember_me_login, Series, Token}).
@@ -55,12 +64,15 @@ email_registered(Email) ->
 remove_old_remember_me_tokens() ->
     gen_server:cast(?MODULE, remove_old_remember_me_tokens).
 
+get_email(Username) ->
+    gen_server:call(?MODULE, {get_email, Username}).
+
 
 %%
 %% Callbacks
 %%
 init([]) ->
-    mnesia:create_table(wfd_user, [{disc_copies, [node()]}, {attributes, record_info(fields, wfd_user)}]),
+    ok = mnesia:wait_for_tables([wfd_user], 5000),
     {ok, []}.
 
 handle_call({register_user, Username, Password, Email}, _From, State) ->
@@ -88,6 +100,13 @@ handle_call({register_user, Username, Password, Email}, _From, State) ->
             NewUser = generate_email_validation(User),
             {reply, {ok, NewUser}, State}
     end;
+
+handle_call({update_password, Username, NewPassword}, _From, State) ->
+    {ok, User} = get_user(Username),
+    {ok, Salt} = bcrypt:gen_salt(),
+    {ok, PasswordHash} = bcrypt:hashpw(NewPassword, Salt),
+    mnesia:transaction(fun() -> mnesia:write(User#wfd_user{password_hash = PasswordHash}) end),
+    {reply, ok, State};
 
 handle_call({validate_email, Username, ValidationToken}, _From, State) ->
     {ok, User} = get_user(Username),
@@ -119,6 +138,13 @@ handle_call({validate_email, Username, ValidationToken}, _From, State) ->
             {reply, {bad_validation_token, NewUser}, State}
     end;
 
+handle_call({update_email, Username, NewEmail}, _From, State) ->
+    {ok, User} = get_user(Username),
+    NewUser1 = generate_email_validation(User),
+    NewUser2 = NewUser1#wfd_user{email = NewEmail, roles = lists:delete(user, NewUser1#wfd_user.roles)},
+    mnesia:transaction(fun() -> mnesia:write(NewUser2) end),
+    {reply, {ok, NewUser2}, State};
+
 handle_call({authenticate, Username, Password, RememberMe, OldRememberMeSeries}, _From, State) ->
     case get_user(Username) of
         {ok, User} ->
@@ -144,6 +170,21 @@ handle_call({authenticate, Username, Password, RememberMe, OldRememberMeSeries},
             end;
         {error, no_such_user} ->
             {reply, {error, bad_auth}, State}
+    end;
+
+handle_call({check_password, Username, Password}, _From, State) ->
+    case get_user(Username) of
+        {ok, User} ->
+            PasswordHash = User#wfd_user.password_hash,
+            case bcrypt:hashpw(Password, PasswordHash) of
+                % if the password matches
+                {ok, PasswordHash} ->
+                    {reply, true, State};
+                _ ->
+                    {reply, false, State}
+            end;
+        {error, no_such_user} ->
+            {reply, false, State}
     end;
 
 handle_call({remember_me_login, Series, Token}, _From, State) ->
@@ -177,6 +218,14 @@ handle_call({email_registered, Email}, _From, State) ->
             {reply, true, State};
         {error, no_such_user} ->
             {reply, false, State}
+    end;
+
+handle_call({get_email, Username}, _From, State) ->
+    case get_user(Username) of
+        {ok, User} ->
+            {reply, {ok, User#wfd_user.email}, State};
+        {error, no_such_user} ->
+            {reply, {error, no_such_user}, State}
     end;
 
 handle_call(_Msg, _From, State) -> {noreply, State}.

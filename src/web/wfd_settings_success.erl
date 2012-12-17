@@ -1,5 +1,5 @@
 %%%
-%%% wfd_sup.erl
+%%% wfd_settings_success.erl
 %%% Copyright (C) 2012 James Lee
 %%% 
 %%% This program is free software: you can redistribute it and/or modify
@@ -16,25 +16,15 @@
 %%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %%%
 
--module(wfd_sup).
--behaviour(supervisor).
--export([start_link/0]).
--export([init/1]).
+-module(wfd_settings_success).
+-compile(export_all).
+-include_lib("nitrogen_core/include/wf.hrl").
 
-% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
+main() -> #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}.
 
-%%
-%% API
-%%
-start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+title() -> "Settings Saved".
 
-%%
-%% Callbacks
-%%
-init([]) ->
-    {ok, {{one_for_one, 5, 10}, [
-        ?CHILD(wfd_unit_server, worker),
-        ?CHILD(wfd_user_server, worker)
-    ]}}.
+content() -> [
+    #p{text = "Your account settings were saved successfully!  If you updated your e-mail address, you will need to revalidate it."},
+    #link{url = "/", text = "Continue", mobile_target = true, data_fields = [{role, button}]}
+].

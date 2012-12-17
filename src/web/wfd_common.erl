@@ -21,53 +21,6 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("wfd.hrl").
 
-left_toolbar_links() -> [
-    #link{text = "Dashboard", url = "#"},
-    #link{text = "Packages", url = "#"},
-    #link{text = "Builds", url = "#"},
-    #link{text = "Upload", url = "/upload", show_if = wf:role(user)}
-].
-
-right_toolbar_links() ->
-    case wf:user() of
-        undefined -> [
-            #link{text = "Login", url = "/login"},
-            #link{text = "Register", url = "/register"}
-        ];
-
-        _User -> [
-            #link{text = "Logout", url = "/logout"},
-            #link{text = "Account Settings", url = "/account_settings"},
-            #link{text = "Admin", url = "/admin", show_if = wf:role(admin)}
-        ]
-    end.
-
-notification_area() ->
-    case (wf:page_module() == wfd_validate_email) or
-         (wf:user() == undefined) or
-         (wf:role(user) or wf:session_default(notification_area_closed, false)) of
-        true ->
-            "";
-        false ->
-            % flash-like code from element_flash.erl
-            #panel{id = notification_flash, style = "display: none;", class = "flash", actions = #show{effect = blind, speed = 400}, body = [
-                #link{class = flash_close_button, text = "Close", postback = notification_area_closed, delegate = ?MODULE},
-                #panel{id = flash_content, body = [
-                    "You must validate your e-mail address before using pkgblender. ",
-                    #link{text = "Resend validation e-mail...", postback = resend_validation_email, delegate = ?MODULE}
-                ]}
-            ]}
-    end.
-
-event(notification_area_closed) ->
-    wf:session(notification_area_closed, true),
-    wf:wire(notification_flash, #hide{effect = blind, speed = 400});
-
-event(resend_validation_email) ->
-    {bad_validation_token, User} = wfd_user_server:validate_email(wf:user(), "dummy-token"),
-    send_validation_email(User),
-    wf:replace(flash_content, #panel{id = flash_content, body = "A new validation e-mail has been sent to you."}).
-
 send_validation_email(User) ->
     wfd_utils:send_email(User#wfd_user.username, User#wfd_user.email, "Validate Your E-mail Address",
         "Hi " ++ User#wfd_user.username ++ ",\n"
@@ -84,3 +37,26 @@ send_validation_email(User) ->
         "Thanks,\n"
         "\n"
         "pkgblender").
+
+protected_page(Roles) ->
+    case wf:user() of
+        undefined ->
+            case wf:session_default(login_dialog_raised, false) of
+                false ->
+                    wf:session(login_dialog_raised, true),
+                    wf:wire(#script{script = "$('#login_dialog').click()"}),
+                    #template{file = code:priv_dir(wfd) ++ "/templates/login.html"};
+
+                true ->
+                    wf:session(login_dialog_raised, false),
+                    #template{file = code:priv_dir(wfd) ++ "/templates/unauthorized.html"}
+            end;
+
+        _User ->
+            case Roles == [] orelse lists:any(fun wf:role/1, Roles) of
+                false ->
+                    #template{file = code:priv_dir(wfd) ++ "/templates/unauthorized.html"};
+                true ->
+                    #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}
+            end
+    end.

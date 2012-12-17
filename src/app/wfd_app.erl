@@ -18,8 +18,10 @@
 
 -module(wfd_app).
 -behaviour(application).
--export([start/0]).
+-export([start/0, install/1]).
 -export([start/2, stop/1]).
+
+-include("wfd.hrl").
 
 %%
 %% API
@@ -30,6 +32,14 @@ start() ->
     application:start(inets),
     application:start(bcrypt),
     application:start(wfd).
+
+install(Nodes) ->
+    % See: http://learnyousomeerlang.com/mnesia#creating-tables-for-real
+    rpc:multicall(Nodes, application, stop, [mnesia]),
+    ok = mnesia:create_schema(Nodes),
+    rpc:multicall(Nodes, application, start, [mnesia]),
+    mnesia:create_table(wfd_user, [{disc_copies, Nodes}, {attributes, record_info(fields, wfd_user)}]),
+    ok.
 
 %%
 %% Callbacks

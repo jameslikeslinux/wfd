@@ -32,10 +32,13 @@ content() ->
         ];
 
         _User -> [
+            #link{url = "/settings", text = "Account Settings", mobile_target = true, data_fields = [{role, button}]},
             #link{url = "/logout", text = "Logout", mobile_target = true, data_fields = [{role, button}]}
         ]
     end,
 
     [
+        #panel{style = "text-align: center; margin-bottom: 1em;", body = #image{image = "/images/logo.png", style = ""}},
+        #panel{class = ["ui-body", "ui-body-e"], body = [#p{text="blah"}]},
         #panel{data_fields = [{role, controlgroup}], body = Actions}
     ].

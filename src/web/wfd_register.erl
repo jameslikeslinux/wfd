@@ -61,7 +61,7 @@ content() ->
         #label{for = "email", text = "E-mail Address:"},
         #textbox{id = email, html_id = "email", next = submit, actions = ResetButton},
         #br{},
-        #button{id = submit, text = "Register", postback = register, actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Registering...').button('refresh')"}}},
+        #button{id = submit, text = "Register", postback = register, data_fields = [{theme, b}], actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Registering...').button('refresh')"}}},
 
         #link{id = success_dialog, url = "/register_success", mobile_target = true, mobile_dialog = true, style = "display: none;"}
     ].

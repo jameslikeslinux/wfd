@@ -26,5 +26,5 @@ title() -> "Bad Cookie".
 
 content() -> [
     #h1{text = "Who stole the cookie from the cookie jar?"},
-    #p{class = "notification", body = "You are attempting to login with an old identifying cookie.  This could mean that someone else has stolen your login cookie.  All of your sessions have been logged-out."}
+    #p{text = "You are attempting to login with an old identifying cookie.  This could mean that someone else has stolen your login cookie.  All of your sessions have been logged-out."}
 ].
