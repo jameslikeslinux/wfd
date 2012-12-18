@@ -25,20 +25,37 @@ main() -> #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}.
 title() -> "Home".
 
 content() -> 
-    Actions = case wf:user() of
+    [#panel{style = "text-align: center; margin-bottom: 1em;", body = #image{image = "/images/logo.png", style = ""}}]
+    
+    ++
+
+    case wf:user() of
         undefined -> [
-            #link{url = "/login", text = "Login", mobile_target = true, mobile_dialog = true, data_fields = [{role, button}]},
-            #link{url = "/register", text = "Register", mobile_target = true, data_fields = [{role, button}]}
+            #panel{data_fields = [{role, controlgroup}], body = [
+                #link{url = "/login", text = "Login", mobile_target = true, mobile_dialog = true, data_fields = [{role, button}]},
+                #link{url = "/register", text = "Register", mobile_target = true, data_fields = [{role, button}]}
+            ]}
         ];
 
-        _User -> [
-            #link{url = "/settings", text = "Account Settings", mobile_target = true, data_fields = [{role, button}]},
-            #link{url = "/logout", text = "Logout", mobile_target = true, data_fields = [{role, button}]}
-        ]
-    end,
+        _User ->
+            AccountPanel = #panel{data_fields = [{role, controlgroup}], body = [
+                #link{url = "/settings", text = "Account Settings", mobile_target = true, data_fields = [{role, button}]},
+                #link{url = "/logout", text = "Logout", mobile_target = true, data_fields = [{role, button}]}
+            ]},
 
-    [
-        #panel{style = "text-align: center; margin-bottom: 1em;", body = #image{image = "/images/logo.png", style = ""}},
-        #panel{class = ["ui-body", "ui-body-e"], body = [#p{text="blah"}]},
-        #panel{data_fields = [{role, controlgroup}], body = Actions}
-    ].
+            case wf:role(user) of
+                true -> [
+                    #panel{style = "margin-bottom: 1em", data_fields = [{role, controlgroup}], body = [
+                        #link{url = "/dishes", mobile_target = true, data_fields = [{role, button}], body = [#image{image = "/images/placeholder.png", style = "vertical-align: middle; margin: 0 10px 0 -52px"}, "Dishes"]},
+                        #link{url = "/menus", mobile_target = true, data_fields = [{role, button}], body = [#image{image = "/images/placeholder.png", style = "vertical-align: middle; margin: 0 10px 0 -52px"}, "Menus"]},
+                        #link{url = "/go_shopping", mobile_target = true, data_fields = [{role, button}], body = [#image{image = "/images/placeholder.png", style = "vertical-align: middle; margin: 0 10px 0 -52px"}, "Go Shopping"]}
+                    ]},
+                    AccountPanel#panel{data_fields = [{mini, true} | AccountPanel#panel.data_fields]}
+                ];
+
+                false -> [
+                    #panel{style = "margin-bottom: 1em", class = ["ui-body", "ui-body-e"], body = [#p{text = "You must validate your e-mail address before using this app."}]},
+                    AccountPanel
+                ]
+            end
+    end.

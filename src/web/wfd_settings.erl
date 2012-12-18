@@ -32,20 +32,20 @@ header() -> #panel{data_fields = [{role, header}], body = [
 content() ->
     {ok, Email} = wfd_user_server:get_email(wf:user()),
 
-    wf:wire(submit, email, #validate{validators = [
+    wf:wire(submit, email, #validate{attach_to = email_status, validators = [
         #is_required{text = "Required"},
         #is_email{text = "Not a valid e-mail address"},
         #custom{text = "E-mail address already registered", function = fun email_not_registered/2}
     ]}),
 
-    wf:wire(submit, new_password, #validate{validators = [
+    wf:wire(submit, new_password, #validate{attach_to = new_password_status, validators = [
         #custom{text = "Must have at least 8 characters", function = fun matches/2, tag = "^(.{8,})?$"},
         #custom{text = "Must have at least one lower-case character", function = fun matches/2, tag = "^(.*[a-z]+.*)?$"},
         #custom{text = "Must have at least one upper-case character", function = fun matches/2, tag = "^(.*[A-Z]+.*)?$"},
         #custom{text = "Must have at least one digit", function = fun matches/2, tag = "^(.*[0-9]+.*)?$"}
     ]}),
 
-    wf:wire(submit, current_password, #validate{validators = [
+    wf:wire(submit, current_password, #validate{attach_to = current_password_status, validators = [
         #is_required{text = "Required"},
         #custom{text = "Invalid password", function = fun wfd_user_server:check_password/2, tag = wf:user()}
     ]}),
@@ -53,18 +53,30 @@ content() ->
     ResetButton = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Save').button('refresh')"}},
 
     [
-        #label{for = "email", text = "E-mail Address:"},
-        #textbox{id = email, html_id = "email", next = new_password, actions = ResetButton, text = Email},
+        #mobile_list{inset = false, body = [
+            #mobile_listitem{body = [
+                #span{id = email_status},
+                #label{for = "email", text = "E-mail Address:"},
+                #textbox{id = email, html_id = "email", next = new_password, actions = ResetButton, text = Email}
+            ]},
 
-        #label{for = "new_password", body = ["New Password:", #br{}, #span{class = "hint", text = "(≥ 8 characters, 1 a-z, 1 A-Z, 1 0-9)"}]},
-        #password{id = new_password, html_id = "new_password", next = current_password, actions = ResetButton},
+            #mobile_listitem{body = [
+                #span{id = new_password_status},
+                #label{for = "new_password", body = ["New Password:", #br{}, #span{class = "hint", text = "(≥ 8 characters, 1 a-z, 1 A-Z, 1 0-9)"}]},
+                #password{id = new_password, html_id = "new_password", next = current_password, actions = ResetButton}
+            ]},
 
-        #label{for = "current_password", body = "Current Password:"},
-        #password{id = current_password, html_id = "current_password", next = submit, actions = ResetButton},
+            #mobile_listitem{body = [
+                #span{id = current_password_status},
+                #label{for = "current_password", body = "Current Password:"},
+                #password{id = current_password, html_id = "current_password", next = submit, actions = ResetButton}
+            ]},
 
-        #br{},
-        #button{id = submit, text = "Save", postback = save, data_fields = [{theme, b}], actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Saving...').button('refresh')"}}},
-
+            #mobile_listitem{body = [
+                #button{id = submit, text = "Save", postback = save, data_fields = [{theme, b}], actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Saving...').button('refresh')"}}}
+            ]}
+        ]},
+        
         #link{id = success_dialog, url = "/settings_success", mobile_target = true, mobile_dialog = true, style = "display: none;"}
     ].
 

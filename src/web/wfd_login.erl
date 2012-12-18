@@ -30,8 +30,6 @@ header() -> #panel{data_fields = [{role, header}], body = [
 ]}.
 
 content() -> 
-    wf:wire(submit, username, #validate{validators = #is_required{text = "Required"}}),
-    wf:wire(submit, password, #validate{validators = #is_required{text = "Required"}}),
     ResetButton = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Login').button('refresh')"}},
     [
         #label{for = "username", text = "Username:", class = "ui-hidden-accessible"},
@@ -44,7 +42,6 @@ content() ->
 
 event(login) ->
     [Username, Password] = wf:mq([username, password]),
-
 
     RememberMe = case wf:q(remember_me) of
         "on" -> true;
