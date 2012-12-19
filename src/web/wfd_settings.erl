@@ -94,11 +94,11 @@ matches(Regex, String) ->
 
 email_not_registered(_Tag, Email) ->
     {ok, CurrentEmail} = wfd_user_server:get_email(wf:user()),
-    string:equal(Email, CurrentEmail) orelse not wfd_user_server:email_registered(Email).
+    Email == CurrentEmail orelse not wfd_user_server:email_registered(Email).
 
 update_email(Email) ->
     {ok, CurrentEmail} = wfd_user_server:get_email(wf:user()),
-    case string:equal(Email, CurrentEmail) of
+    case Email == CurrentEmail of
         false ->
             {ok, NewUser} = wfd_user_server:update_email(wf:user(), Email),
             wf:clear_roles(),
