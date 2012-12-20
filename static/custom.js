@@ -1,8 +1,8 @@
-$(document).on("mobileinit", function() {
+$(document).on('mobileinit', function() {
 //    $.mobile.page.prototype.options.addBackBtn = true;
 });
 
-$(document).ready(function() {
+$(document).bind('pageinit', function() {
     $('div').live('pageshow', function(event, ui) {
         ui.prevPage.remove();
     });
