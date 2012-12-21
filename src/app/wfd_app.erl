@@ -36,9 +36,10 @@ start() ->
 install(Nodes) ->
     % See: http://learnyousomeerlang.com/mnesia#creating-tables-for-real
     rpc:multicall(Nodes, application, stop, [mnesia]),
-    ok = mnesia:create_schema(Nodes),
+    mnesia:create_schema(Nodes),
     rpc:multicall(Nodes, application, start, [mnesia]),
     mnesia:create_table(wfd_user, [{disc_copies, Nodes}, {attributes, record_info(fields, wfd_user)}]),
+    mnesia:create_table(wfd_dish, [{type, bag}, {disc_copies, Nodes}, {attributes, record_info(fields, wfd_dish)}, {index, [user]}]),
     ok.
 
 %%

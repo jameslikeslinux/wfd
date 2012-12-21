@@ -1,7 +1,7 @@
 {application, wfd, [
     {description, "What's for Dinner?"},
     {vsn, "1"},
-    {registered, [wfd_sup, wfd_unit_server, wfd_user_server]},
+    {registered, [wfd_dish_server, wfd_sup, wfd_unit_server, wfd_user_server]},
     {applications, [kernel, stdlib, mnesia, nprocreg, yaws, inets, bcrypt]},
     {mod, {wfd_app, []}}
 ]}.

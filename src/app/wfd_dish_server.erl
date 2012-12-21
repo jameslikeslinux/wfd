@@ -1,5 +1,5 @@
 %%%
-%%% wfd_sup.erl
+%%% wfd_dish_server.erl
 %%% Copyright (C) 2012 James Lee
 %%% 
 %%% This program is free software: you can redistribute it and/or modify
@@ -16,26 +16,35 @@
 %%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %%%
 
--module(wfd_sup).
--behaviour(supervisor).
+-module(wfd_dish_server).
+-author("James Lee <jlee@thestaticvoid.com>").
+-behaviour(gen_server).
 -export([start_link/0]).
--export([init/1]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
-% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
+-include_lib("stdlib/include/qlc.hrl").
+-include("wfd.hrl").
 
 %%
 %% API
 %%
 start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 %%
 %% Callbacks
 %%
 init([]) ->
-    {ok, {{one_for_one, 5, 10}, [
-        ?CHILD(wfd_dish_server, worker),
-        ?CHILD(wfd_unit_server, worker),
-        ?CHILD(wfd_user_server, worker)
-    ]}}.
+    ok = mnesia:wait_for_tables([wfd_dish], 5000),
+    {ok, []}.
+
+handle_call(_Msg, _From, State) -> {noreply, State}.
+handle_cast(_Msg, State) -> {noreply, State}.
+handle_info(_Info, State) -> {noreply, State}.
+terminate(_Reason, _State) -> ok.
+code_change(_OldVsn, State, _Extra) -> {ok, State}.
+
+
+%%
+%% Private Functions
+%%
