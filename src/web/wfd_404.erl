@@ -22,11 +22,4 @@
 
 main() -> 
     wf:status_code(404),
-    #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}.
-
-title() -> "Page Not Found".
-
-content() -> [
-    #h1{text = "Page Not Found"},
-    #p{class = "notification", body = "The page you requested does not exist."}
-].
+    #template{file = code:priv_dir(wfd) ++ "/templates/notfound.html"}.

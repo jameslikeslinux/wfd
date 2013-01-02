@@ -21,7 +21,9 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("wfd.hrl").
 
-main() -> wfd_common:protected_page([]).
+main() ->
+    {_Status, Page} = wfd_common:protected_page([]),
+    Page.
 
 title() -> "E-mail Address Validation".
 

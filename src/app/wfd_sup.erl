@@ -36,6 +36,7 @@ start_link() ->
 init([]) ->
     {ok, {{one_for_one, 5, 10}, [
         ?CHILD(wfd_dish_server, worker),
+        ?CHILD(wfd_ingredient_server, worker),
         ?CHILD(wfd_unit_server, worker),
         ?CHILD(wfd_user_server, worker)
     ]}}.

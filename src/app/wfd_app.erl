@@ -40,6 +40,7 @@ install(Nodes) ->
     rpc:multicall(Nodes, application, start, [mnesia]),
     mnesia:create_table(wfd_user, [{disc_copies, Nodes}, {attributes, record_info(fields, wfd_user)}]),
     mnesia:create_table(wfd_dish, [{type, bag}, {disc_copies, Nodes}, {attributes, record_info(fields, wfd_dish)}, {index, [user]}]),
+    mnesia:create_table(wfd_ingredient, [{type, bag}, {disc_copies, Nodes}, {attributes, record_info(fields, wfd_ingredient)}, {index, [user]}]),
     ok.
 
 %%

@@ -32,12 +32,18 @@ header() -> #panel{data_fields = [{role, header}], body = [
 content() -> 
     ResetButton = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Login').button('refresh')"}},
     [
-        #label{for = "username", text = "Username:", class = "ui-hidden-accessible"},
-        #textbox{id = username, html_id = "username", placeholder = "Username", next = password, actions = ResetButton},
-        #label{for = "password", text = "Password:", class = "ui-hidden-accessible"},
-        #password{id = password, html_id = "password", placeholder = "Password", next = submit, actions = ResetButton},
-        #checkbox{id = remember_me, text = "Remember Me"},
-        #button{id = submit, text = "Login", postback = login, data_fields = [{theme, b}], actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Checking...').button('refresh')"}}}
+        #mobile_list{inset = false, body = [
+            #mobile_listitem{body = [
+                #label{for = "username", text = "Username:", class = "ui-hidden-accessible"},
+                #textbox{id = username, html_id = "username", placeholder = "Username", next = password, actions = ResetButton},
+                #label{for = "password", text = "Password:", class = "ui-hidden-accessible"},
+                #password{id = password, html_id = "password", placeholder = "Password", next = submit, actions = ResetButton},
+                #checkbox{id = remember_me, text = "Remember Me"}
+            ]},
+            #mobile_listitem{body = [
+                #button{id = submit, text = "Login", postback = login, data_fields = [{theme, b}], actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Checking...').button('refresh')"}}}
+            ]}
+        ]}
     ].
 
 event(login) ->

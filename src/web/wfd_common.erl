@@ -45,18 +45,18 @@ protected_page(Roles) ->
                 false ->
                     wf:session(login_dialog_raised, true),
                     wf:wire(#script{script = "$('#login_dialog').click()"}),
-                    #template{file = code:priv_dir(wfd) ++ "/templates/login.html"};
+                    {not_logged_in, #template{file = code:priv_dir(wfd) ++ "/templates/login.html"}};
 
                 true ->
                     wf:session(login_dialog_raised, false),
-                    #template{file = code:priv_dir(wfd) ++ "/templates/unauthorized.html"}
+                    {unauthorized, #template{file = code:priv_dir(wfd) ++ "/templates/unauthorized.html"}}
             end;
 
         _User ->
             case Roles == [] orelse lists:any(fun wf:role/1, Roles) of
                 false ->
-                    #template{file = code:priv_dir(wfd) ++ "/templates/unauthorized.html"};
+                    {unauthorized, #template{file = code:priv_dir(wfd) ++ "/templates/unauthorized.html"}};
                 true ->
-                    #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}
+                    {ok, #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}}
             end
     end.

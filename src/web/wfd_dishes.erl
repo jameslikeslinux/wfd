@@ -21,42 +21,40 @@
 -include_lib("nitrogen_core/include/wf.hrl").
 -include("wfd.hrl").
 
-main() -> wfd_common:protected_page([user]).
+main() ->
+    {_Status, Page} = wfd_common:protected_page([user]),
+    Page.
 
 title() -> "Dishes".
 
 header() -> #panel{data_fields = [{role, header}, {id, dishes_header}, {position, fixed}, {"tap-toggle", false}], body = [
-    #link{url = "/dishes/new", text = "New Dish", mobile_target = true, data_fields = [{icon, plus}]},
+    #link{url = "/new/dish", text = "New Dish", mobile_target = true, mobile_dialog = true, data_fields = [{icon, plus}]},
     #h1{text = "Dishes"},
     #button{text = "Search", data_fields = [{icon, search}, {iconpos, notext}], class = "ui-btn-right", actions = #event{type = click, actions = #script{script = "$('.ui-listview-filter').show(); $('.ui-input-text').focus(); $.mobile.silentScroll(0)"}}}
 ]}.
 
-content() -> [
-    #mobile_list{id = dishes_list, html_id = "dishes_list", inset = false, data_fields = [{filter, true}], body = [
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h4{text = "Acura"}, #span{class = "ui-li-count", text = "$4.75"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Audi"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "BMW"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Cadillac"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Chrysler"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Dodge"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Ferrari"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Ford"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "GMC"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Honda"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Hyundai"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Infiniti"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Jeep"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Kia"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Lexus"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Mini"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Nissan"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Porsche"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Subaru"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Toyota"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Volkswagon"}]}]},
-        #mobile_listitem{body = [#link{url = "/dish", data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h3{text = "Volvo"}]}]}
-    ]}
-].
+content() ->
+    %%
+    %% Filtering and sorting are done strictly for presentation, so I am
+    %% putting that logic here.  If it becomes a performance bottleneck,
+    %% it can be pushed further down the stack to the data access layer.
+    %%
+    Dishes = wfd_dish_server:get_dishes(wf:user()),
+
+    FilteredDishes = case wf:q(show) of
+        "entrees" ->
+            lists:filter(fun(Dish) -> Dish#wfd_dish.type == entree end, Dishes);
+        "sides" ->
+            lists:filter(fun(Dish) -> Dish#wfd_dish.type == side end, Dishes);
+         _ ->
+            Dishes
+    end,
+
+    ListItems = lists:foldr(fun(Dish, DishesList) ->
+        [#mobile_listitem{body = #link{url = "/dish/" ++ wf:url_encode(string:to_lower(Dish#wfd_dish.name)), data_fields = [{transition, slide}], mobile_target = true, body = [#image{image = "/images/placeholder-thumb.png"}, #h4{text = Dish#wfd_dish.name}]}} | DishesList]
+    end, [], lists:sort(fun(Dish1, Dish2) -> string:to_lower(Dish1#wfd_dish.name) =< string:to_lower(Dish2#wfd_dish.name) end, FilteredDishes)),
+
+    #panel{html_id = "dishes_list", body = #mobile_list{inset = false, data_fields = [{filter, true}], body = ListItems}}.
 
 footer() -> 
     {AllChecked, EntreesChecked, SidesChecked} = case wf:q(show) of

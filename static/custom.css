@@ -1,14 +1,23 @@
-@media only screen and (min-width: 480px){
+@media only screen and (min-width: 400px){
     .ui-content {
-        width: 400px;
-        margin: 0 auto !important;
-        position: relative !important;
+        max-width: 400px;
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .ui-dialog-contain {
+        max-width: 400px;
     }
 }
 
 .LV_validation_message {
     float: right;
     font-size: small;
+}
+
+#dish_settings .LV_validation_message,
+.ingredients .LV_validation_message {
+    float: none;
 }
 
 .LV_invalid {
@@ -19,7 +28,11 @@
     font-size: small;
 }
 
-.ui-listview-filter {
+#ingredients_list .ui-listview-filter-inset {
+    margin-top: 0;
+}
+
+#dishes_list .ui-listview-filter {
     display: none;
 }
 
@@ -45,4 +58,26 @@
 .ingredients .ui-li-static {
     padding-top: 0;
     padding-bottom: 0;
+}
+
+#notification {
+    position: absolute;
+    top: 0.25em;
+    left: 0;
+    right: 0;
+    text-align: center;
+    display: none;
+}
+
+#notification h4 {
+    display: inline;
+    padding: 0.25em 0.5em;
+}
+
+input.ui-slider-input {
+    width: 32px;
+}
+
+div.ui-slider {
+    width: 50%;
 }

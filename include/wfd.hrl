@@ -14,7 +14,15 @@
     type = entree,      % entree | side
     servings = 4,
     ingredients = [],   % [{"name", {value, unit}}]
-    photo = <<>>
+    cost = unknown
+}).
+
+-record(wfd_ingredient, {
+    name,
+    user,
+    price = {unknown, unknown},
+    can_buy_exact_amount = false,
+    must_use_used_by = immediately  % | soon | whenever    
 }).
 
 %% Constants

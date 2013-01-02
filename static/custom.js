@@ -1,11 +1,36 @@
 $(document).on('mobileinit', function() {
 //    $.mobile.page.prototype.options.addBackBtn = true;
+//    $.mobile.ignoreContentEnabled = true;    
 });
 
-$(document).bind('pageinit', function() {
-    $('div').live('pageshow', function(event, ui) {
+$(document).on('pageinit', function() {
+    $('div').on('pageshow', function(event, ui) {
         ui.prevPage.remove();
     });
+
+    $('.ui-slider-input').each(function() {
+        $(this).data('lastvalue', $(this).val());
+
+        $(this).on('slidestart', function() {
+            $(this).data('sliding', true);
+        });
+    
+        $(this).on('slidestop', function() {
+           $(this).data('sliding', false);
+           $(this).trigger('change');
+        });
+    
+        $(this).on('change', function(event) {
+            if ($(this).val() == $(this).data('lastvalue') || $(this).data('sliding')) {
+                event.stopImmediatePropagation();
+            } else {
+                $(this).data('lastvalue', $(this).val());
+            }
+        });
+    });
+
+    // I want to create labels for the listview filter input
+    $('input[data-type="search"]').attr('id', 'search-input');
 });
 
 /*
