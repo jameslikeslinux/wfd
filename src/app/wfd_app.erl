@@ -28,6 +28,7 @@
 %%
 start() ->
     application:start(nprocreg),
+    application:start(crypto),
     application:start(bcrypt),
     application:start(mnesia),
     application:start(wfd).
@@ -36,6 +37,7 @@ stop() ->
     application:stop(wfd),
     application:stop(mnesia),
     application:stop(bcrypt),
+    application:stop(crypto),
     application:stop(nprocreg).
 
 install(Nodes) ->
