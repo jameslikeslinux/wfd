@@ -92,16 +92,22 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 process_image(Filename) ->
     error_logger:info_msg("Processing ~s~n", [Filename]),
     case {
-        convert_cmd("convert " ++ Filename ++ " -resize 240x240^ -gravity center -extent 240x240 -format jpg -"),
-        convert_cmd("convert " ++ Filename ++ " -resize 1000x1000\\> -format jpg -")
+        convert_cmd(Filename ++ " -resize 240x240^ -gravity center -extent 240x240 -format jpg -"),
+        convert_cmd(Filename ++ " -resize 1000x1000\\> -format jpg -")
     } of
         {{ok, Thumbnail}, {ok, Image}} -> {ok, Thumbnail, Image};
         _ -> {error, processing_failed}
     end.
 
 convert_cmd(Cmd) ->
-    Port = erlang:open_port({spawn, Cmd}, [exit_status, binary]),
-    read_convert_output(Port, []).
+    case os:find_executable("convert") of
+        false ->
+            error_logger:error_msg("'convert' not found"),
+            {error, convert_not_found};
+        Convert ->
+            Port = erlang:open_port({spawn, Convert ++ " " ++ Cmd}, [exit_status, binary]),
+            read_convert_output(Port, [])
+    end.
 
 read_convert_output(Port, Data) ->
     receive
