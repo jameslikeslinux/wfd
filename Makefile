@@ -11,6 +11,9 @@ static/nitrogen:
 compile: get-deps static/nitrogen
 	./rebar compile
 
+test: compile
+	./rebar skip_deps=true eunit
+
 run: compile
 	-mkdir log
 	ERL_LIBS=deps:$(shell readlink -f ..) ./deps/yaws/bin/yaws -i --sname wfd --mnesiadir mnesia --runmod wfd_app --conf rel/files/yaws.conf

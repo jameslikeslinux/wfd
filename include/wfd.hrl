@@ -1,3 +1,7 @@
+-ifdef(TEST).
+-define(test_setup(F), {setup, fun wfd_app:test_setup/0, fun wfd_app:test_cleanup/1, F}).
+-endif.
+
 %% Mnesia tables
 -record(wfd_user, {
     username,

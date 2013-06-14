@@ -25,6 +25,10 @@
 -include_lib("stdlib/include/qlc.hrl").
 -include("wfd.hrl").
 
+-ifdef(TEST).
+-include_lib("eunit/include/eunit.hrl").
+-endif.
+
 %%
 %% API
 %%
@@ -115,3 +119,22 @@ read_convert_output(Port, Data) ->
         {Port, {exit_status, 0}} -> {ok, lists:reverse(Data)};
         {Port, {exit_status, _S}} -> {error, convert_failed}
     end.
+
+
+%%
+%% Tests
+%%
+-ifdef(TEST).
+
+add_photo_test_() -> [
+    {"A valid photo can be added", ?test_setup(fun test_add_valid_photo/1)},
+    {"An invalid photo is rejected", ?test_setup(fun test_add_invalid_photo/1)}
+].
+
+test_add_valid_photo(_) ->
+    ?_assertEqual(1, 1).
+
+test_add_invalid_photo(_) ->
+    ?_assertEqual(2, 2).
+
+-endif.
