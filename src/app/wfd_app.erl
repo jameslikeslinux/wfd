@@ -30,26 +30,24 @@ start() ->
     application:start(nprocreg),
     application:start(crypto),
     application:start(bcrypt),
-    application:start(mnesia),
+    application:start(yaws),
     application:start(wfd).
 
 stop() ->
     application:stop(wfd),
-    application:stop(mnesia),
+    application:stop(yaws),
     application:stop(bcrypt),
     application:stop(crypto),
     application:stop(nprocreg).
 
 install(Nodes) ->
     % See: http://learnyousomeerlang.com/mnesia#creating-tables-for-real
-    rpc:multicall(Nodes, application, stop, [mnesia]),
     mnesia:create_schema(Nodes),
     rpc:multicall(Nodes, application, start, [mnesia]),
     mnesia:create_table(wfd_user, [{disc_copies, Nodes}, {attributes, record_info(fields, wfd_user)}]),
     mnesia:create_table(wfd_dish, [{type, bag}, {disc_copies, Nodes}, {attributes, record_info(fields, wfd_dish)}, {index, [user]}]),
     mnesia:create_table(wfd_dish_photo, [{frag_properties, [{node_pool, Nodes}, {n_fragments, 1}, {n_disc_only_copies, length(Nodes)}]}, {attributes, record_info(fields, wfd_dish_photo)}]),
     mnesia:create_table(wfd_ingredient, [{type, bag}, {disc_copies, Nodes}, {attributes, record_info(fields, wfd_ingredient)}, {index, [user]}]),
-    start(),
     ok.
 
 uninstall(Nodes) ->
@@ -62,6 +60,7 @@ uninstall(Nodes) ->
 %% Callbacks
 %%
 start(_StartType, _StartArgs) ->
+    install([node()]),
     wfd_sup:start_link().
 
 stop(_State) ->

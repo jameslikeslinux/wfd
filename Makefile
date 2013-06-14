@@ -15,8 +15,8 @@ test: compile
 	./rebar skip_deps=true ct
 
 run: compile
-	-mkdir logs
-	ERL_LIBS=deps:$(shell readlink -f ..) ./deps/yaws/bin/yaws -i --sname wfd --mnesiadir mnesia --runmod wfd_app --conf rel/files/yaws.conf
+	-mkdir log
+	ERL_LIBS=deps:$(shell readlink -f ..) erl -sname wfd -boot start_sasl -config app.config -run wfd_app
 
 rel: compile
 	cd rel; ../rebar generate
@@ -27,4 +27,4 @@ clean:
 
 distclean: clean
 	./rebar delete-deps
-	-rm -rf deps ebin rel/wfd* logs mnesia
+	-rm -rf deps ebin rel/wfd* log mnesia

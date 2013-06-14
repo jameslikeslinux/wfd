@@ -1,5 +1,5 @@
 ## Name of the node
--sname wfd_test
+-sname wfd
 
 ## Cookie for distributed erlang
 -setcookie wfd
