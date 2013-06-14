@@ -12,10 +12,10 @@ compile: get-deps static/nitrogen
 	./rebar compile
 
 test: compile
-	./rebar skip_deps=true eunit
+	./rebar skip_deps=true ct
 
 run: compile
-	-mkdir log
+	-mkdir logs
 	ERL_LIBS=deps:$(shell readlink -f ..) ./deps/yaws/bin/yaws -i --sname wfd --mnesiadir mnesia --runmod wfd_app --conf rel/files/yaws.conf
 
 rel: compile
@@ -27,4 +27,4 @@ clean:
 
 distclean: clean
 	./rebar delete-deps
-	-rm -rf deps ebin rel/wfd* log mnesia
+	-rm -rf deps ebin rel/wfd* logs mnesia

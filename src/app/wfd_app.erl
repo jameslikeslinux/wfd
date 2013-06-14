@@ -23,36 +23,20 @@
 
 -include("wfd.hrl").
 
--ifdef(TEST).
--export([test_setup/0, test_cleanup/1]).
-
-test_setup() ->
-    error_logger:tty(false),
-    application:set_env(mnesia, dir, "mnesia"),
-    install([node()]),
-    start().
-
-test_cleanup(_R) ->
-    stop(),
-    uninstall([node()]).
--endif.
-
 %%
 %% API
 %%
 start() ->
-    application:start(mnesia),
     application:start(nprocreg),
-    application:start(inets),
     application:start(bcrypt),
+    application:start(mnesia),
     application:start(wfd).
 
 stop() ->
-    application:start(wfd),
-    application:start(bcrypt),
-    application:start(inets),
-    application:start(nprocreg),
-    application:start(mnesia).
+    application:stop(wfd),
+    application:stop(mnesia),
+    application:stop(bcrypt),
+    application:stop(nprocreg).
 
 install(Nodes) ->
     % See: http://learnyousomeerlang.com/mnesia#creating-tables-for-real
@@ -63,9 +47,11 @@ install(Nodes) ->
     mnesia:create_table(wfd_dish, [{type, bag}, {disc_copies, Nodes}, {attributes, record_info(fields, wfd_dish)}, {index, [user]}]),
     mnesia:create_table(wfd_dish_photo, [{frag_properties, [{node_pool, Nodes}, {n_fragments, 1}, {n_disc_only_copies, length(Nodes)}]}, {attributes, record_info(fields, wfd_dish_photo)}]),
     mnesia:create_table(wfd_ingredient, [{type, bag}, {disc_copies, Nodes}, {attributes, record_info(fields, wfd_ingredient)}, {index, [user]}]),
+    start(),
     ok.
 
 uninstall(Nodes) ->
+    stop(),
     rpc:multicall(Nodes, application, stop, [mnesia]),
     mnesia:delete_schema(Nodes),
     ok.

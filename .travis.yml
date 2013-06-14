@@ -1,4 +1,8 @@
 language: erlang
+otp_release:
+  - R16B
+  - R15B03
 before_install:
- - sudo apt-get update -qq
- - sudo apt-get install -qq libpam0g-dev
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq libpam0g-dev
+script: ./rebar compile && ./rebar skip_deps=true ct
