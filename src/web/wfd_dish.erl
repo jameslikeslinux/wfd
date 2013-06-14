@@ -1,6 +1,6 @@
 %%%
 %%% wfd_dish.erl
-%%% Copyright (C) 2012 James Lee
+%%% Copyright (C) 2013 James Lee
 %%% 
 %%% This program is free software: you can redistribute it and/or modify
 %%% it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ content() ->
     %%
     wf:replace("form div.ui-btn", [
         #link{style = "position: absolute; top: 0px; left: 0px; z-index: 1; margin: 2px; padding-left: 0.75em", text = "Change"},
-        #link{style = "position: absolute; top: 0px; right: 0px; z-index: 3; padding: 2px 0.75em 2px 0", text = "Remove", postback = remove_image}
+        #link{style = "position: absolute; top: 0px; right: 0px; z-index: 3; padding: 2px 0.75em 2px 0", text = "Remove", postback = remove_photo}
     ]),
     wf:wire("$('form').trigger('create')"),
 
@@ -95,7 +95,7 @@ content() ->
             ]},
 
             #panel{class = "ui-block-b", style = "padding-left: 1em", body = [
-                #image{image = "/images/placeholder-thumb.png", style = "width: 100%"},
+                #image{image = "/dish/photo/" ++ wf:path_info() ++ "+thumb.jpg", style = "width: 100%"},
                 #upload{show_button = false}
             ]}
         ]},
@@ -127,6 +127,20 @@ footer() -> [
         ]},
 
         #panel{id = delete_ingredient_popup_content, data_fields = [{role, content}]}
+    ]},
+
+    #panel{html_id = "photo_error_popup", data_fields = [{role, popup}], body = [
+%        #panel{data_fields = [{role, header}], body = [
+%            #h1{text = "Failed to Process Your Photo"}
+%        ]},
+
+        #panel{data_fields = [{role, content}], body = [
+            #h3{text = "Your image could not be processed.", class = "ui-title"},
+            #p{text = "Maybe it was too large or in the wrong format."},
+            #panel{style = "text-align: right", body = [
+                #button{text = "Ok", data_fields = [{inline, true}, {rel, back}], actions = #event{type = click, actions = "$('#photo_error_popup').popup('close')"}}
+            ]}
+        ]}
     ]}
 ].
 
@@ -142,6 +156,9 @@ event(servings) ->
 event(delete_dish) ->
     wfd_dish_server:delete_dish((wf:state(dish))#wfd_dish.name, wf:user()),
     wf:wire("$.mobile.changePage('/dishes')");
+
+event(remove_photo) ->
+    wfd_dish_server:remove_photo((wf:state(dish))#wfd_dish.name, wf:user());
 
 event({ask_delete_ingredient, IngredientName, ListItemId}) ->
     wf:update(delete_ingredient_popup_content, [
@@ -164,3 +181,16 @@ flash_notification() ->
     wf:wire(notification, "$(obj('notification')).stop().css({'opacity': 1})"),
     wf:wire(notification, #show{}),
     wf:wire(notification, #fade{speed = 1000}).
+
+start_upload_event(_Tag) ->
+    ok.
+
+finish_upload_event(_Tag, _FileName, LocalFileName, _Node) ->
+    case wfd_dish_server:change_photo((wf:state(dish))#wfd_dish.name, wf:user(), LocalFileName) of
+        ok ->
+            % refresh image
+            ok;
+        _Error ->
+            wf:wire("$('#photo_error_popup').trigger('create').popup('open')")
+    end,
+    file:delete(LocalFileName).

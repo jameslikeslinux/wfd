@@ -19,7 +19,7 @@
 -module(wfd_dish_server).
 -author("James Lee <jlee@thestaticvoid.com>").
 -behaviour(gen_server).
--export([start_link/0, new_dish/2, dish_exists/2, delete_dish/2, get_dishes/1, get_dish/2, set_type/3, set_servings/3, dish_has_ingredient/3]).
+-export([start_link/0, new_dish/2, dish_exists/2, delete_dish/2, get_dishes/1, get_dish/2, set_type/3, set_servings/3, change_photo/3, remove_photo/2, get_photo/3, dish_has_ingredient/3]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("stdlib/include/qlc.hrl").
@@ -51,6 +51,15 @@ set_type(Name, User, Type) ->
 
 set_servings(Name, User, Servings) ->
     gen_server:call(?MODULE, {set_servings, Name, User, Servings}).
+
+change_photo(Name, User, Filename) ->
+    gen_server:call(?MODULE, {change_photo, Name, User, Filename}).
+
+remove_photo(Name, User) ->
+    gen_server:call(?MODULE, {remove_photo, Name, User}).
+
+get_photo(Name, User, Size) ->
+    gen_server:call(?MODULE, {get_photo, Name, User, Size}).
 
 dish_has_ingredient(Name, User, IngredientName) ->
     gen_server:call(?MODULE, {dish_has_ingredient, Name, User, IngredientName}).
@@ -128,6 +137,60 @@ handle_call({set_servings, Name, User, Servings}, _From, State) ->
         end
     end),
     {reply, ok, State};
+
+handle_call({change_photo, Name, User, Filename}, _From, State) ->
+    Reply = case wfd_dish_photo_server:add_photo(Filename) of
+        {ok, Uuid} ->
+            {atomic, ok} = mnesia:transaction(fun() ->
+                case get_dish_1(Name, User) of
+                    {ok, Dish} ->
+                        wfd_dish_photo_server:remove_photo(Dish#wfd_dish.photo),
+                        mnesia:delete_object(Dish),
+                        mnesia:write(Dish#wfd_dish{photo = Uuid});
+                    _ ->
+                        ok
+                end
+            end),
+            ok;
+        Error ->
+            Error
+    end,
+    {reply, Reply, State};
+
+handle_call({remove_photo, Name, User}, _From, State) ->
+    {atomic, ok} = mnesia:transaction(fun() ->
+        case get_dish_1(Name, User) of
+            {ok, Dish} ->
+                case Dish#wfd_dish.photo of
+                    none ->
+                        ok;
+                    Photo ->
+                        wfd_dish_photo_server:remove_photo(Photo),
+                        mnesia:delete_object(Dish),
+                        mnesia:write(Dish#wfd_dish{photo = none})
+                end;
+            _ ->
+                ok
+        end
+    end),
+    {reply, ok, State};
+
+handle_call({get_photo, Name, User, Size}, _From, State) ->
+    {atomic, Reply} = mnesia:transaction(fun() ->
+        case get_dish_1(Name, User) of
+            {ok, Dish} ->
+                case Dish#wfd_dish.photo of
+                    none ->
+                        {error, no_photo};
+                    PhotoUuid ->
+                        {ok, Photo} = wfd_dish_photo_server:get_photo(PhotoUuid, Size),
+                        {ok, PhotoUuid, Photo}
+                end;
+            _Error ->
+                {error, no_such_dish}
+        end
+    end),
+    {reply, Reply, State};
 
 handle_call({dish_has_ingredient, Name, User, IngredientName}, _From, State) ->
     {atomic, Status} = mnesia:transaction(fun() ->

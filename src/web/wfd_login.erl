@@ -38,7 +38,7 @@ content() ->
                 #textbox{id = username, html_id = "username", placeholder = "Username", next = password, actions = ResetButton},
                 #label{for = "password", text = "Password:", class = "ui-hidden-accessible"},
                 #password{id = password, html_id = "password", placeholder = "Password", next = submit, actions = ResetButton},
-                #checkbox{id = remember_me, text = "Remember Me"}
+                #checkbox{id = remember_me, text = "Remember Me", checked = true}
             ]},
             #mobile_listitem{body = [
                 #button{id = submit, text = "Login", postback = login, data_fields = [{theme, b}], actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Checking...').button('refresh')"}}}

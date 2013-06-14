@@ -14,7 +14,14 @@
     type = entree,      % entree | side
     servings = 4,
     ingredients = [],   % [{"name", {value, unit}}]
-    cost = unknown
+    cost = unknown,
+    photo = none        % none | uuid
+}).
+
+-record(wfd_dish_photo, {
+    uuid,
+    thumbnail,
+    original
 }).
 
 -record(wfd_ingredient, {

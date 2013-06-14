@@ -18,13 +18,7 @@
 
 -module(wfd_utils).
 -author("James Lee <jlee@thestaticvoid.com>").
--export([run_cmd/1, send_email/4]).
-
-run_cmd(Cmd) ->
-    [Status|RevOutput] = lists:reverse(string:tokens(os:cmd(Cmd ++ "; echo $?"), "\n")),
-    Output = lists:reverse(RevOutput),
-    error_logger:info_msg("Ran command: ~p~nExit status: ~s~nOutput:~n~s", [Cmd, Status, [["    ", O, $\n] || O <- Output]]),
-    {list_to_integer(Status), Output}.
+-export([send_email/4]).
 
 send_email(ToName, ToEmail, Subject, Message) ->
     gen_smtp_client:send({"jlee@thestaticvoid.org", [ToEmail],
