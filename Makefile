@@ -15,7 +15,6 @@ test: compile
 	./rebar skip_deps=true ct
 
 run: compile
-	-mkdir log
 	ERL_LIBS=deps:$(shell readlink -f ..) erl -sname wfd -boot start_sasl -config app.config -run wfd_app
 
 rel: compile
