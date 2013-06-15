@@ -22,6 +22,7 @@
 -export([start_link/0, get_appropriate_conversions/1, convert/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
+-include_lib("eunit/include/eunit.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -include("wfd.hrl").
 
@@ -82,7 +83,7 @@ init([]) ->
     {ok, #state{unit_graph = UnitGraph}}.
 
 handle_call({get_appropriate_conversions, FromUnit}, _From, State) ->
-    {reply, digraph_utils:reachable([FromUnit], State#state.unit_graph), State};
+    {reply, lists:sort(digraph_utils:reachable([FromUnit], State#state.unit_graph)), State};
 
 handle_call({convert, {Amount, FromUnit}, ToUnit}, _From, State) ->
     UnitGraph = State#state.unit_graph,
@@ -124,3 +125,19 @@ find_edge_cost(UnitGraph, FromUnit, ToUnit) ->
             _ -> Cost
         end
     end, 1, Edges).
+
+
+%%
+%% Tests
+%%
+get_appropriate_conversions_test_() -> [
+    ?_assertEqual([cup,floz,gal,liter,ml,pint,quart,stick,tbsp,tsp], wfd_unit_server:get_appropriate_conversions(tsp)),
+    ?_assertEqual([g,kg,lbs,oz], wfd_unit_server:get_appropriate_conversions(oz)),
+    ?_assertEqual([foo], wfd_unit_server:get_appropriate_conversions(foo))
+].
+
+convert_test_() -> [
+    ?_assertEqual({ok, {128.0, floz}}, wfd_unit_server:convert({1, gal}, floz)),
+    ?_assertEqual({ok, {35.274, oz}}, wfd_unit_server:convert({1, kg}, oz)),
+    ?_assertEqual({error, invalid_conversion}, wfd_unit_server:convert({1, kg}, floz))
+].

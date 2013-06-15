@@ -1,10 +1,11 @@
--module(wfd_dish_photo_server_SUITE).
+-module(wfd_SUITE).
 -compile(export_all).
 
 -include_lib("common_test/include/ct.hrl").
 
 all() -> [
-    test_wfd_dish_photo_server
+    test_wfd_dish_photo_server,
+    test_wfd_unit_server
 ].
 
 init_per_suite(Config) ->
@@ -45,3 +46,6 @@ test_wfd_dish_photo_server(Config) ->
     ok = wfd_dish_photo_server:remove_photo(Uuid),
     {error, no_such_photo} = wfd_dish_photo_server:get_photo(Uuid, thumb),
     {error, no_such_photo} = wfd_dish_photo_server:get_photo(Uuid, full).
+
+test_wfd_unit_server(_Config) ->
+    ok = eunit:test(wfd_unit_server, [verbose]).
