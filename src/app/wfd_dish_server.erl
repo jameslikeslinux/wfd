@@ -1,6 +1,6 @@
 %%%
 %%% wfd_dish_server.erl
-%%% Copyright (C) 2012 James Lee
+%%% Copyright (C) 2013 James Lee
 %%% 
 %%% This program is free software: you can redistribute it and/or modify
 %%% it under the terms of the GNU General Public License as published by
@@ -97,6 +97,7 @@ handle_call({delete_dish, Name, User}, _From, State) ->
     {atomic, ok} = mnesia:transaction(fun() ->
         case get_dish_1(Name, User) of
             {ok, Dish} ->
+                wfd_dish_photo_server:remove_photo(Dish#wfd_dish.photo),
                 mnesia:delete_object(Dish);
             _ ->
                 ok
