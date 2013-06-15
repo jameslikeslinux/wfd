@@ -68,14 +68,18 @@ handle_call({remove_photo, Uuid}, _From, State) ->
     {reply, ok, State};
 
 handle_call({get_photo, Uuid, Size}, _From, State) ->
-    [Photo] = mnesia:activity(transaction, fun() ->
-        mnesia:read({wfd_dish_photo, Uuid})
-    end, [], mnesia_frag),
-    Reply = case Size of
-        thumb ->
-            {ok, Photo#wfd_dish_photo.thumbnail};
-        _OtherSize ->
-            {ok, Photo#wfd_dish_photo.original}
+    Reply = case mnesia:activity(transaction, fun() ->
+                mnesia:read({wfd_dish_photo, Uuid})
+            end, [], mnesia_frag) of
+        [Photo] ->
+            case Size of
+                thumb ->
+                    {ok, Photo#wfd_dish_photo.thumbnail};
+                _OtherSize ->
+                    {ok, Photo#wfd_dish_photo.original}
+            end;
+        _ ->
+            {error, no_such_photo}
     end,
     {reply, Reply, State};    
 

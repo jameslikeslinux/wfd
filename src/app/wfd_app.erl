@@ -60,7 +60,8 @@ uninstall(Nodes) ->
 %% Callbacks
 %%
 start(_StartType, _StartArgs) ->
-    install([node()]),
+    % XXX: Figure out a better place to do the schema creation
+    install([node()|nodes()]),
     wfd_sup:start_link().
 
 stop(_State) ->
