@@ -19,6 +19,7 @@
 -module(wfd_dish).
 -compile(export_all).
 -include_lib("nitrogen_core/include/wf.hrl").
+-include_lib("nitrogen_core/include/simple_bridge.hrl").
 -include("wfd.hrl").
 
 main() ->
@@ -28,7 +29,16 @@ main() ->
             case wfd_dish_server:get_dish(wf:url_decode(wf:path_info()), wf:user()) of
                 {ok, Dish} ->
                     wf:state(dish, Dish),
-                    Page;
+
+                    Req = wf_context:request_bridge(),
+                    case Req:post_files() of
+                        [UploadedFile|_Rest] ->
+                            wf:info("Got uploaded file ~p~n", [UploadedFile]),
+                            wf:session(uploaded_file, UploadedFile),
+                            "";
+                        _ ->
+                            Page
+                    end;
                 {error, no_such_dish} ->
                     wfd_404:main()
             end;
@@ -47,18 +57,30 @@ header() -> #panel{data_fields = [{role, header}], body = [
 content() -> 
     Dish = wf:state(dish),
 
-    %%
-    %% The 'upload' element generates a button by default,
-    %% which JQM then transforms into an enhanced button.
-    %% I just want a simple link, but I don't want to rewrite
-    %% the upload element just yet.  For now, use javascript
-    %% to replace the enhanced button with links:
-    %%
-    wf:replace("form div.ui-btn", [
-        #link{style = "position: absolute; top: 0px; left: 0px; z-index: 1; margin: 2px; padding-left: 0.75em", text = "Change"},
-        #link{style = "position: absolute; top: 0px; right: 0px; z-index: 3; padding: 2px 0.75em 2px 0", text = "Remove", postback = remove_photo}
-    ]),
-    wf:wire("$('form').trigger('create')"),
+    wf:wire(#api{name = uploadComplete}),
+
+    wf:wire("$(function() {
+        $('.restful_upload').fileupload({
+            start: function(e) {
+                $('#upload_buttons').hide();
+                $('.progress-bar').show();  
+            },
+            stop: function(e, data) {
+                $('.progress-bar').hide();
+                $('#progress_bar').val(0);
+                $('#progress_bar').slider('refresh');
+                $('#upload_buttons').show();
+            },
+            progressall: function(e, data) {
+                var progress = parseInt(data.loaded / data.total * 100, 10);
+                $('#progress_bar').val(progress);
+                $('#progress_bar').slider('refresh');
+            },
+            done: function(e, data) {
+                page.uploadComplete();
+            }
+        });
+    });"),
 
     %%
     %% Generate ingredients list
@@ -95,8 +117,17 @@ content() ->
             ]},
 
             #panel{class = "ui-block-b", style = "padding-left: 1em", body = [
-                #image{image = "/dish/photo/" ++ wf:path_info() ++ "+thumb.jpg", style = "width: 100%"},
-                #upload{show_button = false}
+                #image{id = photo, image = "/dish/photo/" ++ wf:path_info() ++ "+thumb.jpg", style = "width: 100%"},
+                #panel{id = progress, html_id = "progress", class = "progress-bar", style = "display: none", body = [
+                    #range{html_id = "progress_bar", min = 0, max = 100, value = 0, data_fields = [{highlight, true}, {mini, true}]}
+                ]},
+                #panel{html_id = "upload_buttons", style = "text-align: center", data_fields = [{role, controlgroup}, {type, horizontal}, {mini, true}], body = [
+                    #panel{class = "fileinput-button", data_fields = [{role, button}], body = [
+                        #span{text = "Upload"},
+                        #restful_upload{id = upload, data_fields = [{role, none}]}
+                    ]},
+                    #link{data_fields = [{role, button}], text = "Remove", postback = remove_photo}
+                ]}
             ]}
         ]},
 
@@ -158,7 +189,8 @@ event(delete_dish) ->
     wf:wire("$.mobile.changePage('/dishes')");
 
 event(remove_photo) ->
-    wfd_dish_server:remove_photo((wf:state(dish))#wfd_dish.name, wf:user());
+    wfd_dish_server:remove_photo((wf:state(dish))#wfd_dish.name, wf:user()),
+    wf:wire(wf:f("$(obj('photo')).attr('src', '~s?' + new Date().getTime())", ["/dish/photo/" ++ wf:path_info() ++ "+thumb.jpg"]));
 
 event({ask_delete_ingredient, IngredientName, ListItemId}) ->
     wf:update(delete_ingredient_popup_content, [
@@ -182,14 +214,14 @@ flash_notification() ->
     wf:wire(notification, #show{}),
     wf:wire(notification, #fade{speed = 1000}).
 
-start_upload_event(_Tag) ->
-    ok.
 
-finish_upload_event(_Tag, _FileName, LocalFileName, _Node) ->
+api_event(uploadComplete, _, _) ->
+    UploadedFile = wf:session(uploaded_file),
+    wf:info("Processing uploaded file ~p~n", [UploadedFile]),
+    LocalFileName = UploadedFile#uploaded_file.temp_file,
     case wfd_dish_server:change_photo((wf:state(dish))#wfd_dish.name, wf:user(), LocalFileName) of
         ok ->
-            % refresh image
-            ok;
+            wf:wire(wf:f("$(obj('photo')).attr('src', '~s?' + new Date().getTime())", ["/dish/photo/" ++ wf:path_info() ++ "+thumb.jpg"]));
         _Error ->
             wf:wire("$('#photo_error_popup').trigger('create').popup('open')")
     end,

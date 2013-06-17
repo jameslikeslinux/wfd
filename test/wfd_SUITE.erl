@@ -48,20 +48,23 @@ end_per_testcase(_TestCase, _Config) ->
 %% Test Cases
 %%
 test_wfd_dish_photo_server(Config) ->
+    % Can add valid photos, but not anything else
     {error, processing_failed} = wfd_dish_photo_server:add_photo(filename:join(?config(data_dir, Config), "invalid-photo.jpg")),
     {ok, Uuid} = wfd_dish_photo_server:add_photo(filename:join(?config(data_dir, Config), "valid-photo.jpg")),
 
+    % Can retrieve photos
     {ok, ThumbPhotoData} = wfd_dish_photo_server:get_photo(Uuid, thumb),
     {ok, FullPhotoData} = wfd_dish_photo_server:get_photo(Uuid, full),
 
+    % The converted photos are valid and the proper size
     ThumbPhoto = filename:join(?config(priv_dir, Config), "thumb.jpg"),
     FullPhoto = filename:join(?config(priv_dir, Config), "full.jpg"),
     ok = file:write_file(ThumbPhoto, ThumbPhotoData),
     ok = file:write_file(FullPhoto, FullPhotoData),
-
     true = string:str(os:cmd("identify " ++ ThumbPhoto), "JPEG 240x240") > 0,
     true = string:str(os:cmd("identify " ++ FullPhoto), "JPEG 1000x667") > 0,
 
+    % Removing the photo actually deletes it
     ok = wfd_dish_photo_server:remove_photo(Uuid),
     {error, no_such_photo} = wfd_dish_photo_server:get_photo(Uuid, thumb),
     {error, no_such_photo} = wfd_dish_photo_server:get_photo(Uuid, full).
@@ -113,4 +116,7 @@ test_wfd_dish_server(Config) ->
     ok = wfd_dish_server:change_photo("Foo Dish", "bar", filename:join(?config(data_dir, Config), "valid-photo.jpg")),
     {ok, Photo3Uuid, _Photo3} = wfd_dish_server:get_photo("Foo Dish", "bar", thumb),
     ok = wfd_dish_server:delete_dish("Foo Dish", "bar"),
-    {error, no_such_photo} = wfd_dish_photo_server:get_photo(Photo3Uuid, thumb).
+    {error, no_such_photo} = wfd_dish_photo_server:get_photo(Photo3Uuid, thumb),
+
+    % TODO: Test ingredients
+    ok.

@@ -65,7 +65,7 @@ footer() ->
     end,
 
     #panel{data_fields = [{role, footer}, {id, dishes_footer}, {position, fixed}, {"tap-toggle", false}], body = [
-        #panel{data_fields = [{role, controlgroup}, {type, horizontal}], style = "display: block; text-align: center;", body = [
+        #panel{data_fields = [{role, controlgroup}, {type, horizontal}, {mini, true}], style = "display: block; text-align: center;", body = [
             #radio{name = "view", text = "All", checked = AllChecked, actions = #event{type = click, actions = #script{script = "$.mobile.changePage('?show=all', {changeHash: false, transition: 'none'})"}}},
             #radio{name = "view", text = "Entrées", checked = EntreesChecked, actions = #event{type = click, actions = #script{script = "$.mobile.changePage('?show=entrees', {changeHash: false, transition: 'none'})"}}},
             #radio{name = "view", text = "Sides", checked = SidesChecked, actions = #event{type = click, actions = #script{script = "$.mobile.changePage('?show=sides', {changeHash: false, transition: 'none'})"}}}

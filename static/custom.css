@@ -74,10 +74,16 @@
     padding: 0.25em 0.5em;
 }
 
-input.ui-slider-input {
-    width: 32px;
+/* From http://monocaffe.blogspot.com/2013/05/a-jquery-mobile-progress-bar.html */
+.progress-bar input[type=number], .progress-bar .ui-slider-handle {
+    display: none;
+}  
+
+.progress-bar .ui-slider-track {
+    margin: 0px;
 }
 
-div.ui-slider {
-    width: 50%;
+.ui-btn-text {
+    /* Don't let upload button overflow into ellipses */
+    position: static;
 }
