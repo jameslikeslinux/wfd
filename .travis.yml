@@ -1,6 +1,8 @@
 language: erlang
 otp_release:
   - R15B03
+rvm:
+  - 1.9.3
 before_script:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libpam0g-dev
