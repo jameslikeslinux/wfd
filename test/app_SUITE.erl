@@ -1,5 +1,5 @@
 %%%
-%%% wfd_SUITE.erl
+%%% app_SUITE.erl
 %%% Copyright (C) 2013 James Lee
 %%% 
 %%% This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 %%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
 %%%
 
--module(wfd_SUITE).
+-module(app_SUITE).
 -author("James Lee <jlee@thestaticvoid.com>").
 -compile(export_all).
 
@@ -35,7 +35,7 @@ init_per_suite(Config) ->
     Config.
 
 end_per_suite(_Config) ->
-    ok.
+    wfd_app:uninstall([node()|nodes()]).
 
 init_per_testcase(_TestCase, Config) ->
     Config.
