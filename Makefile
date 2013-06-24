@@ -23,7 +23,8 @@ rel: compile
 clean:
 	-rm -rf static/nitrogen
 	./rebar clean
+	-rm test/*.beam
 
 distclean: clean
 	./rebar delete-deps
-	-rm -rf deps ebin rel/wfd* log mnesia
+	-rm -rf deps ebin rel/wfd* log mnesia test/logs

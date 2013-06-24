@@ -24,11 +24,17 @@
 -include("wfd.hrl").
 
 all() -> [
-    test_web
+    test_all
 ].
 
 init_per_suite(Config) ->
     wfd_app:start(),
+   
+    % Create some users to be used by capybara 
+    test_helpers:create_user("pendinguser", "password"),
+    User = test_helpers:create_user("validuser", "password"),
+    test_helpers:validate_user(User),
+
     Config.
 
 end_per_suite(_Config) ->
@@ -44,10 +50,26 @@ end_per_testcase(_TestCase, _Config) ->
 %%
 %% Test Cases
 %%
-test_web(Config) ->
+test_all(Config) ->
+    0 = run_rspec(Config, "").
+
+test_home(Config) ->
+    0 = run_rspec(Config, "home_spec.rb").
+
+test_register(Config) ->
+    0 = run_rspec(Config, "register_spec.rb").
+
+test_dishes(Config) ->
+    0 = run_rspec(Config, "dishes_spec.rb").
+
+
+%%
+%% Helper Functions
+%%
+run_rspec(Config, SpecName) ->
     SpecDir = filename:join(?config(data_dir, Config), "spec"),
-    Port = erlang:open_port({spawn, "rspec --format documentation -I " ++ SpecDir ++ " " ++ SpecDir}, [exit_status]),
-    0 = read_output(Port).
+    Port = erlang:open_port({spawn, "rspec --format documentation -I " ++ SpecDir ++ " " ++ filename:join(SpecDir, SpecName)}, [exit_status]),
+    read_output(Port).
 
 read_output(Port) ->
     receive
