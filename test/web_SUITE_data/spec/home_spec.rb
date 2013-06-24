@@ -21,5 +21,6 @@ feature 'home page' do
         page.should have_content('Dishes')
         page.should have_content('Menus')
         page.should have_content('Go Shopping')
+        page.should_not have_content('You must validate your e-mail address before using this app.')
     end
 end

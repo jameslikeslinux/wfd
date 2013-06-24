@@ -5,6 +5,7 @@ before_script:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libpam0g-dev
   - sudo gem install rspec capybara selenium-webdriver
+  - sudo gem list
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
 script: ./rebar compile && ./rebar skip_deps=true ct

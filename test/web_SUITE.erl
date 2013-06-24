@@ -77,7 +77,7 @@ test_dishes(Config) ->
 %%
 run_rspec(Config, SpecName) ->
     SpecDir = filename:join(?config(data_dir, Config), "spec"),
-    Port = erlang:open_port({spawn, "rspec -I " ++ SpecDir ++ " " ++ filename:join(SpecDir, SpecName)}, [exit_status]),
+    Port = erlang:open_port({spawn, "rspec --format documentation -I " ++ SpecDir ++ " " ++ filename:join(SpecDir, SpecName)}, [exit_status]),
     {ExitStatus, Output} = read_output(Port, []),
     ct:pal(Output),
     ExitStatus.
