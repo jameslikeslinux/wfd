@@ -28,3 +28,10 @@ create_user(Username, Password) ->
 
 validate_user(User) ->
     wfd_user_server:validate_email(User#wfd_user.username, User#wfd_user.validation_token).
+
+create_entree(Dish, Username) ->
+    wfd_dish_server:new_dish(Dish, Username).
+
+create_side(Dish, Username) ->
+    wfd_dish_server:new_dish(Dish, Username),
+    wfd_dish_server:set_type(Dish, Username, side).

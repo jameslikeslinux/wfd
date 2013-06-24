@@ -1,10 +1,10 @@
 language: erlang
 otp_release:
   - R15B03
-before_install:
+before_script:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libpam0g-dev
-before_script:
+  - sudo gem install rspec capybara selenium-webdriver
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
 script: ./rebar compile && ./rebar skip_deps=true ct

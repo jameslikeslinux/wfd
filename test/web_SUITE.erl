@@ -30,10 +30,19 @@ all() -> [
 init_per_suite(Config) ->
     wfd_app:start(),
    
-    % Create some users to be used by capybara 
+    % Create some users to be used by Capybara 
     test_helpers:create_user("pendinguser", "password"),
-    User = test_helpers:create_user("validuser", "password"),
-    test_helpers:validate_user(User),
+    User1 = test_helpers:create_user("validuser1", "password"),
+    test_helpers:validate_user(User1),
+    User2 = test_helpers:create_user("validuser2", "password"),
+    test_helpers:validate_user(User2),
+
+    % Create dishes to be used by Capybara
+    test_helpers:create_entree("Entree 1", "validuser1"),
+    test_helpers:create_entree("Entree 2", "validuser1"),
+    test_helpers:create_entree("validuser2 Entree", "validuser2"),
+    test_helpers:create_side("Side 1", "validuser1"),
+    test_helpers:create_side("Side 2", "validuser1"),
 
     Config.
 
@@ -68,11 +77,15 @@ test_dishes(Config) ->
 %%
 run_rspec(Config, SpecName) ->
     SpecDir = filename:join(?config(data_dir, Config), "spec"),
-    Port = erlang:open_port({spawn, "rspec --format documentation -I " ++ SpecDir ++ " " ++ filename:join(SpecDir, SpecName)}, [exit_status]),
-    read_output(Port).
+    Port = erlang:open_port({spawn, "rspec -I " ++ SpecDir ++ " " ++ filename:join(SpecDir, SpecName)}, [exit_status]),
+    {ExitStatus, Output} = read_output(Port, []),
+    ct:pal(Output),
+    ExitStatus.
 
-read_output(Port) ->
+read_output(Port, Output) ->
     receive
-        {Port, {data, Output}} -> io:format("~s", [Output]), read_output(Port);
-        {Port, {exit_status, ExitStatus}} -> ExitStatus
+        {Port, {data, Line}} ->
+            read_output(Port, [Line | Output]);
+        {Port, {exit_status, ExitStatus}} ->
+            {ExitStatus, lists:reverse(Output)}
     end.

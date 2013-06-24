@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'spec_helper'
 
 feature 'dishes list' do
@@ -7,9 +8,52 @@ feature 'dishes list' do
         page.should have_content('Unauthorized')
     end
 
-    scenario 'is visible for valid user' do
-        visit '/dishes'
-        login_valid_user
-        page.should have_content('New Dish')
+    context 'assuming valid user' do
+        background do
+            visit '/dishes'
+            login_valid_user
+        end
+
+        scenario 'is visible' do
+            page.should have_content('Entree 1')
+            page.should have_content('Side 1')
+            page.should_not have_content('validuser2 Entree')
+        end
+
+        scenario 'can create new dish' do
+            click_on 'New Dish'
+            fill_in 'Dish Name', :with => 'Dish 1'
+            click_on 'Create'
+            page.evaluate_script('window.history.back()')
+            page.should have_content('Dish 1')
+        end
+
+        scenario "can't create duplicate dish" do
+            click_on 'New Dish'
+            fill_in 'Dish Name', :with => 'Entree 1'
+            click_on 'Create'
+            page.should have_content('Dish already exists')
+        end
+
+        scenario 'will show only entrees' do
+            choose 'Entrées'
+            page.should have_content('Entree 1')
+            page.should_not have_content('Side 1')
+        end
+
+        scenario 'will show only sides' do
+            choose 'Sides'
+            page.should have_content('Side 1')
+            page.should_not have_content('Entree 1')
+        end
+
+        scenario 'will filter dishes' do
+            click_on 'Search'
+            fill_in 'Filter items...', :with => '2'
+            page.should have_content('Entree 2')
+            page.should have_content('Side 2')
+            page.should_not have_content('Entree 1')
+            page.should_not have_content('Side 1')
+        end
     end
 end
