@@ -19,7 +19,7 @@
 -module(wfd_dish_server).
 -author("James Lee <jlee@thestaticvoid.com>").
 -behaviour(gen_server).
--export([start_link/0, new_dish/2, dish_exists/2, delete_dish/2, get_dishes/1, get_dish/2, set_type/3, set_servings/3, change_photo/3, remove_photo/2, get_photo/3, dish_has_ingredient/3]).
+-export([start_link/0, new_dish/2, dish_exists/2, delete_dish/2, get_dishes/1, get_dish/2, set_type/3, set_servings/3, change_photo/3, remove_photo/2, get_photo/3, add_ingredient/3, remove_ingredient/3]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("stdlib/include/qlc.hrl").
@@ -61,8 +61,11 @@ remove_photo(Name, User) ->
 get_photo(Name, User, Size) ->
     gen_server:call(?MODULE, {get_photo, Name, User, Size}).
 
-dish_has_ingredient(Name, User, IngredientName) ->
-    gen_server:call(?MODULE, {dish_has_ingredient, Name, User, IngredientName}).
+add_ingredient(Name, User, IngredientName) ->
+    gen_server:call(?MODULE, {add_ingredient, Name, User, IngredientName}).
+
+remove_ingredient(Name, User, IngredientName) ->
+    gen_server:call(?MODULE, {remove_ingredient, Name, User, IngredientName}).
 
 %%
 %% Callbacks
@@ -193,16 +196,42 @@ handle_call({get_photo, Name, User, Size}, _From, State) ->
     end),
     {reply, Reply, State};
 
-handle_call({dish_has_ingredient, Name, User, IngredientName}, _From, State) ->
-    {atomic, Status} = mnesia:transaction(fun() ->
+handle_call({add_ingredient, Name, User, IngredientName}, _From, State) ->
+    {atomic, Reply} = mnesia:transaction(fun() ->
         case get_dish_1(Name, User) of
             {ok, Dish} ->
-                proplists:is_defined(IngredientName, Dish#wfd_dish.ingredients);
+                case proplists:is_defined(IngredientName, Dish#wfd_dish.ingredients) of
+                    false ->
+                        wfd_ingredient_server:new_ingredient(IngredientName, User),
+                        mnesia:delete_object(Dish),
+                        mnesia:write(Dish#wfd_dish{ingredients = [{IngredientName, unknown} | Dish#wfd_dish.ingredients]});
+                    true -> 
+                        {error, already_has_ingredient}
+                end;
             _ ->
-                false
+                {error, no_such_dish}
         end                        
     end),
-    {reply, Status, State};
+    {reply, Reply, State};
+
+handle_call({remove_ingredient, Name, User, IngredientName}, _From, State) ->
+    {atomic, Reply} = mnesia:transaction(fun() ->
+        case get_dish_1(Name, User) of
+            {ok, Dish} ->
+                mnesia:delete_object(Dish),
+                mnesia:write(Dish#wfd_dish{ingredients = proplists:delete(IngredientName, Dish#wfd_dish.ingredients)}),
+                case qlc:e(qlc:q([D || D <- mnesia:table(wfd_dish),
+                                       proplists:is_defined(IngredientName, D#wfd_dish.ingredients)])) of
+                    [] ->
+                        wfd_ingredient_server:delete_ingredient(IngredientName, User);
+                    _ ->
+                        ok
+                end;
+            _ ->
+                {error, no_such_dish}
+        end                        
+    end),
+    {reply, Reply, State};
 
 handle_call(_Msg, _From, State) -> {noreply, State}.
 handle_cast(_Msg, State) -> {noreply, State}.

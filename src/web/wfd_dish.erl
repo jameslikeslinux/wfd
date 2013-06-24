@@ -202,8 +202,9 @@ event({ask_delete_ingredient, IngredientName, ListItemId}) ->
     ]),
     wf:wire("$('#delete_ingredient_popup').trigger('create').popup('open')");
 
-event({delete_ingredient, _IngredientName, ListItemId}) ->
+event({delete_ingredient, IngredientName, ListItemId}) ->
     wf:wire("$('#delete_ingredient_popup').popup('close')"),
+    wfd_dish_server:remove_ingredient((wf:state(dish))#wfd_dish.name, wf:user(), IngredientName),
     wf:remove(ListItemId),
     wf:wire("$('.ingredients').listview('refresh')"),
     flash_notification().

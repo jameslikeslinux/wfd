@@ -85,4 +85,5 @@ content() ->
     ].
 
 event(add) ->
-    wf:wire(#script{script = "$(obj('submit')).attr('value', 'Not Implemented').button('refresh')"}).
+    wfd_dish_server:add_ingredient((wf:state(dish))#wfd_dish.name, wf:user(), wf:q(ingredient_name)),
+    wf:wire("$('.ui-dialog').dialog('close')").
