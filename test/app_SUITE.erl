@@ -35,6 +35,7 @@ init_per_suite(Config) ->
     Config.
 
 end_per_suite(_Config) ->
+    wfd_app:stop(),
     wfd_app:uninstall([node()|nodes()]).
 
 init_per_testcase(_TestCase, Config) ->
