@@ -9,7 +9,15 @@ static/nitrogen:
 compile: get-deps static/nitrogen
 	./rebar compile
 
+test-app: compile
+	./rebar skip_deps=true ct suites=app
+
+test-web: compile
+	bundle install
+	./rebar skip_deps=true ct suites=web
+
 test: compile
+	bundle install
 	./rebar skip_deps=true ct
 
 run: compile
