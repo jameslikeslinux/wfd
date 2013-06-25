@@ -10,7 +10,6 @@ feature 'home page' do
     scenario 'prompts pending user to validate email address' do
         visit '/'
         click_on 'Login'
-        wait_for_ajax
         login_pending_user
         page.should have_content('You must validate your e-mail address before using this app.')
     end
@@ -18,7 +17,6 @@ feature 'home page' do
     scenario 'shows all options to valid users' do
         visit '/'
         click_on 'Login'
-        wait_for_ajax
         login_valid_user
         page.should have_content('Dishes')
         page.should have_content('Menus')
