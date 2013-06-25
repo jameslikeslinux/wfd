@@ -8,10 +8,7 @@ install: true
 before_script:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libpam0g-dev firefox
-  - which firefox
-  - firefox -version
-  - export PATH=/usr/bin:$PATH
-  - which firefox
+  - sudo rm /usr/local/bin/firefox && sudo ln -s /usr/bin/firefox /usr/local/bin/firefox
   - firefox -version
 script: xvfb-run make test
 after_script: rsync --recursive --delete test/logs/ travis@thestaticvoid.com::wfd_logs
