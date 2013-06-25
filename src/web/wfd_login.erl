@@ -30,7 +30,7 @@ header() -> #panel{data_fields = [{role, header}], body = [
 ]}.
 
 content() -> 
-    ResetButton = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Login').button('refresh')"}},
+    ResetButton = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Log In').button('refresh')"}},
     [
         #mobile_list{inset = false, body = [
             #mobile_listitem{body = [
@@ -41,7 +41,7 @@ content() ->
                 #checkbox{id = remember_me, text = "Remember Me", checked = true}
             ]},
             #mobile_listitem{body = [
-                #button{id = submit, text = "Login", postback = login, data_fields = [{theme, b}], actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Checking...').button('refresh')"}}}
+                #button{id = submit, text = "Log In", postback = login, data_fields = [{theme, b}], actions = #event{type = click, actions = #script{script = "$(obj('submit')).attr('value', 'Checking...').button('refresh')"}}}
             ]}
         ]}
     ].
