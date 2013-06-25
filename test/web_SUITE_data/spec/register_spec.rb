@@ -4,6 +4,7 @@ feature 'registration' do
     scenario "doesn't let the user enter nothing" do
         visit '/register'
         click_on 'Register'
+        wait_for_ajax
         page.should have_content('Required')
     end
 
@@ -11,6 +12,7 @@ feature 'registration' do
         visit '/register'
         fill_in 'Username', :with => 'a'
         click_on 'Register'
+        wait_for_ajax
         page.should have_content('Must have at least 3 characters')
     end
 
@@ -20,6 +22,7 @@ feature 'registration' do
         fill_in 'Password', :with => 'Testing123'
         fill_in 'E-mail Address', :with => 'test@example.com'
         click_on 'Register'
+        wait_for_ajax
         page.should have_content('Your account was created successfully!')
     end
 end
