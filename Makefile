@@ -1,5 +1,3 @@
-PATH = /usr/bin/i86:/usr/bin:/bin
-
 default: compile
 
 get-deps:
