@@ -51,7 +51,7 @@ title() -> (wf:state(dish))#wfd_dish.name.
 
 header() -> #panel{data_fields = [{role, header}], body = [
     #h1{text = (wf:state(dish))#wfd_dish.name},
-    #link{url = "#delete_dish_popup", text = "Delete", mobile_target = true, data_fields = [{icon, delete}, {rel, popup}, {"position-to", window}, {transition, pop}], class = "ui-btn-right"}
+    #link{url = "#delete_dish_popup", text = "Delete", mobile_target = true, data_fields = [{icon, delete}, {rel, popup}, {"position-to", window}, {transition, none}], class = "ui-btn-right"}
 ]}.
 
 content() -> 

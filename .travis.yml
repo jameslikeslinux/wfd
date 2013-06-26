@@ -8,5 +8,5 @@ install: true
 before_script:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libpam0g-dev
-script: make test-app
+script: xvfb-run make test
 after_script: rsync --recursive --delete test/logs/ travis@thestaticvoid.com::wfd_logs

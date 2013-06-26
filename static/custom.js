@@ -1,6 +1,8 @@
 $(document).on('mobileinit', function() {
 //    $.mobile.page.prototype.options.addBackBtn = true;
 //    $.mobile.ignoreContentEnabled = true;    
+    $.mobile.defaultDialogTransition = 'none';
+    $.mobile.defaultPageTransition = 'none';
 });
 
 $(document).on('pageinit', function() {
