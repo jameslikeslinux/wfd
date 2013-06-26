@@ -60,3 +60,14 @@ protected_page(Roles) ->
                     {ok, #template{file = code:priv_dir(wfd) ++ "/templates/base.html"}}
             end
     end.
+
+js() ->
+    case ?test of
+        true ->
+            "$(document).on('mobileinit', function() {"
+            "    $.mobile.defaultDialogTransition = 'none';"
+            "    $.mobile.defaultPageTransition = 'none';"
+            "});";
+        false ->
+            ""
+    end.

@@ -27,9 +27,8 @@ rel: compile
 	cd rel; ../rebar generate
 
 clean:
-	-rm -rf static/nitrogen
 	./rebar clean
-	-rm test/*.beam
+	-rm -rf static/nitrogen test/*.beam
 
 distclean: clean
 	./rebar delete-deps

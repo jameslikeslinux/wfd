@@ -34,3 +34,7 @@
 
 %% Constants
 -define(REMEMBER_ME_TTL, 40320).  % four weeks
+
+%% Macros
+-define(test(True, False), case ct:get_status() of no_tests_running -> False; _Else -> True end).
+-define(test, ?test(true, false)).

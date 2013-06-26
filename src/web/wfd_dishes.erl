@@ -52,7 +52,7 @@ content() ->
 
     ListItems = lists:foldr(fun(Dish, DishesList) ->
         DishUrlPath = wf:url_encode(string:to_lower(Dish#wfd_dish.name)),
-        [#mobile_listitem{body = #link{url = "/dish/" ++ DishUrlPath, data_fields = [{transition, none}], mobile_target = true, body = [#image{image = "/dish/photo/" ++ DishUrlPath ++ "+thumb.jpg"}, #h4{text = Dish#wfd_dish.name}]}} | DishesList]
+        [#mobile_listitem{body = #link{url = "/dish/" ++ DishUrlPath, data_fields = [{transition, ?test(none, slide)}], mobile_target = true, body = [#image{image = "/dish/photo/" ++ DishUrlPath ++ "+thumb.jpg"}, #h4{text = Dish#wfd_dish.name}]}} | DishesList]
     end, [], lists:sort(fun(Dish1, Dish2) -> string:to_lower(Dish1#wfd_dish.name) =< string:to_lower(Dish2#wfd_dish.name) end, FilteredDishes)),
 
     #panel{html_id = "dishes_list", body = #mobile_list{inset = false, data_fields = [{filter, true}], body = ListItems}}.
