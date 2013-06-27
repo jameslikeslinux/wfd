@@ -49,26 +49,26 @@ end_per_testcase(_TestCase, _Config) ->
 %% Test Cases
 %%
 test_wfd_dish_photo_server(Config) ->
-    % Can add valid photos, but not anything else
     {error, processing_failed} = wfd_dish_photo_server:add_photo(filename:join(?config(data_dir, Config), "invalid-photo.jpg")),
     {ok, Uuid} = wfd_dish_photo_server:add_photo(filename:join(?config(data_dir, Config), "valid-photo.jpg")),
+    ct:pal("Can add valid photos, but not anything else"),
 
-    % Can retrieve photos
     {ok, ThumbPhotoData} = wfd_dish_photo_server:get_photo(Uuid, thumb),
     {ok, FullPhotoData} = wfd_dish_photo_server:get_photo(Uuid, full),
+    ct:pal("Can retrieve photos"),
 
-    % The converted photos are valid and the proper size
     ThumbPhoto = filename:join(?config(priv_dir, Config), "thumb.jpg"),
     FullPhoto = filename:join(?config(priv_dir, Config), "full.jpg"),
     ok = file:write_file(ThumbPhoto, ThumbPhotoData),
     ok = file:write_file(FullPhoto, FullPhotoData),
     true = string:str(os:cmd("identify " ++ ThumbPhoto), "JPEG 240x240") > 0,
     true = string:str(os:cmd("identify " ++ FullPhoto), "JPEG 1000x667") > 0,
+    ct:pal("The converted photos are valid and the proper size"),
 
-    % Removing the photo actually deletes it
     ok = wfd_dish_photo_server:remove_photo(Uuid),
     {error, no_such_photo} = wfd_dish_photo_server:get_photo(Uuid, thumb),
-    {error, no_such_photo} = wfd_dish_photo_server:get_photo(Uuid, full).
+    {error, no_such_photo} = wfd_dish_photo_server:get_photo(Uuid, full),
+    ct:pal("Removing the photo actually deletes it").
 
 test_wfd_unit_server(_Config) ->
     ok = eunit:test(wfd_unit_server, [verbose]).
@@ -77,47 +77,49 @@ test_wfd_user_server(_Config) ->
     {ok, FooUser1} = wfd_user_server:register_user("foo", "password", "foo@example.com"),
     {error, user_already_exists} = wfd_user_server:register_user("foo", "password", "foo@example.com"),
     {ok, BarUser1} = wfd_user_server:register_user("bar", "password", "foo@example.com"),
+    ct:pal("User registration works and doesn't allow duplicate users"),
 
-    % Validating email address requires valid token; and it adds the 'user' role
     [] = FooUser1#wfd_user.roles,
     {bad_validation_token, FooUser2} = wfd_user_server:validate_email("foo", "a-bad-validation-token"),
     {ok, FooUser3} = wfd_user_server:validate_email("foo", FooUser2#wfd_user.validation_token),
     already_validated = wfd_user_server:validate_email("foo", FooUser2#wfd_user.validation_token),
     [user] = FooUser3#wfd_user.roles,
+    ct:pal("Validating email address requires valid token; and it adds the 'user' role"),
 
     {error, email_already_registered} = wfd_user_server:register_user("baz", "password", "foo@example.com"),
+    ct:pal("Can not register account with an already validated email address"),
 
-    % Can change from an already validated email address to validate
     email_already_registered = wfd_user_server:validate_email("bar", BarUser1#wfd_user.validation_token),
     {ok, BarUser2} = wfd_user_server:update_email("bar", "bar@example.com"),
     {ok, _BarUser3} = wfd_user_server:validate_email("bar", BarUser2#wfd_user.validation_token),
+    ct:pal("Can change from an already validated email address to validate"),
 
     % TODO: Test authentication
     ok.
 
 test_wfd_dish_server(Config) ->
-    % A user can only have one dish by a name (case insensitive)
     ok = wfd_dish_server:new_dish("Foo Dish", "foo"),
     {error, dish_already_exists} = wfd_dish_server:new_dish("fOo DiSh", "foo"),
     ok = wfd_dish_server:new_dish("Foo Dish", "bar"),
+    ct:pal("A user can only have one dish by a name (case insensitive)"),
 
-    % Can set and get photo
     {error, no_photo} = wfd_dish_server:get_photo("Foo Dish", "foo", thumb),
     {error, processing_failed} = wfd_dish_server:change_photo("Foo Dish", "foo", filename:join(?config(data_dir, Config), "invalid-photo.jpg")),
     ok = wfd_dish_server:change_photo("Foo Dish", "foo", filename:join(?config(data_dir, Config), "valid-photo.jpg")),
     {ok, Photo1Uuid, _Photo1} = wfd_dish_server:get_photo("Foo Dish", "foo", thumb),
+    ct:pal("Can set and get photo"),
 
-    % Changing photo deletes old photo from store
     ok = wfd_dish_server:change_photo("Foo Dish", "foo", filename:join(?config(data_dir, Config), "valid-photo.jpg")),
     {ok, Photo2Uuid, _Photo2} = wfd_dish_server:get_photo("Foo Dish", "foo", thumb),
     true = Photo1Uuid =/= Photo2Uuid,
     {error, no_such_photo} = wfd_dish_photo_server:get_photo(Photo1Uuid, thumb),
+    ct:pal("Changing photo deletes old photo from store"),
 
-    % Deleting a dish deletes the photo from the photo store
     ok = wfd_dish_server:change_photo("Foo Dish", "bar", filename:join(?config(data_dir, Config), "valid-photo.jpg")),
     {ok, Photo3Uuid, _Photo3} = wfd_dish_server:get_photo("Foo Dish", "bar", thumb),
     ok = wfd_dish_server:delete_dish("Foo Dish", "bar"),
     {error, no_such_photo} = wfd_dish_photo_server:get_photo(Photo3Uuid, thumb),
+    ct:pal("Deleting a dish deletes the photo from the photo store"),
 
     % TODO: Test ingredients
     ok.
