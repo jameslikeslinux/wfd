@@ -174,7 +174,15 @@ remove_conversion(UnitGraph, FromUnit, To) ->
 
 path_cost(UnitGraph, [FromUnit, ToUnit], Cost) ->
     EdgeCost = find_edge_cost(UnitGraph, FromUnit, ToUnit),
-    Cost / EdgeCost;
+    PathCost = Cost / EdgeCost,
+
+    % Return an integer instead of a float if the result is whole
+    case PathCost == trunc(PathCost) of
+        true ->
+            trunc(PathCost);
+        false ->
+            PathCost
+    end;
 path_cost(UnitGraph, [FromUnit, ToUnit | Rest], Cost) ->
     EdgeCost = find_edge_cost(UnitGraph, FromUnit, ToUnit),
     path_cost(UnitGraph, [ToUnit | Rest], Cost / EdgeCost).
@@ -259,7 +267,7 @@ get_appropriate_conversions_test_() -> [
 
 convert_test_() -> [
     {"Volume",
-    ?_assertEqual({ok, {128.0, floz}}, wfd_unit_server:convert({1, gal}, floz))},
+    ?_assertEqual({ok, {128, floz}}, wfd_unit_server:convert({1, gal}, floz))},
 
     {"Weight",
     ?_assertEqual({ok, {35.274, oz}}, wfd_unit_server:convert({1, kg}, oz))},
@@ -271,7 +279,7 @@ convert_test_() -> [
     ?_assertEqual({ok, {33.814, floz}}, wfd_unit_server:convert({1, kg}, floz, "water"))},
 
     {"The ingredient is case-insensitive",
-    ?_assertEqual({ok, {16.0, pinch}}, wfd_unit_server:convert({1, tsp}, pinch, "SaLt``"))},
+    ?_assertEqual({ok, {16, pinch}}, wfd_unit_server:convert({1, tsp}, pinch, "SaLt``"))},
     
     {"Specifying an ingredient doesn't permanently alter the unit graph",
     ?_assertEqual({error, invalid_conversion}, wfd_unit_server:convert({1, kg}, floz))}
