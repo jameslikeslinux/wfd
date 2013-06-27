@@ -19,7 +19,7 @@
 -module(wfd_unit_server).
 -author("James Lee <jlee@thestaticvoid.com>").
 -behaviour(gen_server).
--export([start_link/0, get_appropriate_conversions/1, get_appropriate_conversions/2, convert/2, convert/3]).
+-export([start_link/0, get_appropriate_conversions/1, get_appropriate_conversions/2, convert/2, convert/3, parse/1, get_graph/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -46,6 +46,12 @@ convert(Amount, ToUnit) ->
 convert(Amount, ToUnit, Ingredient) ->
     gen_server:call(?MODULE, {convert, Amount, ToUnit, Ingredient}).
 
+parse(String) ->
+    gen_server:call(?MODULE, {parse, String}).
+
+get_graph() ->
+    gen_server:call(?MODULE, {get_graph}).
+
 %%
 %% Callbacks
 %%
@@ -53,26 +59,28 @@ init([]) ->
     UnitGraph = digraph:new(),
 
     % Volumes
-    digraph:add_vertex(UnitGraph, tsp),
-    digraph:add_vertex(UnitGraph, tbsp),
-    digraph:add_vertex(UnitGraph, floz),
-    digraph:add_vertex(UnitGraph, cup),
-    digraph:add_vertex(UnitGraph, pint),
-    digraph:add_vertex(UnitGraph, quart),
-    digraph:add_vertex(UnitGraph, gal),
-    digraph:add_vertex(UnitGraph, ml),
-    digraph:add_vertex(UnitGraph, liter),
+    digraph:add_vertex(UnitGraph, tsp, add_plurals(["tsp", "t", "teaspoon"])),
+    digraph:add_vertex(UnitGraph, tbsp, add_plurals(["tbsp", "T", "tablespoon"])),
+    digraph:add_vertex(UnitGraph, floz, add_plurals(["fl oz", "fluid oz", "fluid ounce"])),
+    digraph:add_vertex(UnitGraph, cup, add_plurals(["cup", "c"])),
+    digraph:add_vertex(UnitGraph, pint, add_plurals(["pt", "pint"])),
+    digraph:add_vertex(UnitGraph, quart, add_plurals(["qt", "quart"])),
+    digraph:add_vertex(UnitGraph, gal, add_plurals(["gal", "gallon"])),
+    digraph:add_vertex(UnitGraph, ml, add_plurals(["ml", "mL", "milliliter", "millilitre"])),
+    digraph:add_vertex(UnitGraph, liter, add_plurals(["L", "l", "liter", "litre"])),
 
     % Weights
-    digraph:add_vertex(UnitGraph, oz),
-    digraph:add_vertex(UnitGraph, lbs),
-    digraph:add_vertex(UnitGraph, g),
-    digraph:add_vertex(UnitGraph, kg),
+    digraph:add_vertex(UnitGraph, oz, add_plurals(["oz", "ounce"])),
+    digraph:add_vertex(UnitGraph, lb, add_plurals(["lb", "pound"])),
+    digraph:add_vertex(UnitGraph, g, add_plurals(["g", "gram"])),
+    digraph:add_vertex(UnitGraph, kg, add_plurals(["kg", "kilogram"])),
 
     % Misc
-    digraph:add_vertex(UnitGraph, stick),
-    digraph:add_vertex(UnitGraph, pinch),
-    digraph:add_vertex(UnitGraph, dash),
+    digraph:add_vertex(UnitGraph, count, [""]),
+    digraph:add_vertex(UnitGraph, box, add_plurals(["box"])),
+    digraph:add_vertex(UnitGraph, stick, add_plurals(["stick"])),
+    digraph:add_vertex(UnitGraph, pinch, add_plurals(["pinch", "pn"])),
+    digraph:add_vertex(UnitGraph, dash, add_plurals(["dash"])),
 
     % Conversions
     add_conversion(UnitGraph, pinch, tsp, 16),
@@ -85,7 +93,7 @@ init([]) ->
     add_conversion(UnitGraph, cup, pint, 2),
     add_conversion(UnitGraph, pint, quart, 2),
     add_conversion(UnitGraph, quart, gal, 4),
-    add_conversion(UnitGraph, oz, lbs, 16),
+    add_conversion(UnitGraph, oz, lb, 16),
     add_conversion(UnitGraph, oz, g, 0.035274),
     add_conversion(UnitGraph, g, kg, 1000),
 
@@ -118,6 +126,28 @@ handle_call({convert, {Amount, FromUnit}, ToUnit, Ingredient}, _From, State) ->
 
     {reply, Reply, State};
 
+handle_call({parse, String}, _From, State) ->
+    Reply = case string_to_number(string:strip(String)) of 
+        {error, _Reason} ->
+            {error, no_amount};
+        {Amount, Rest} ->
+            case Amount =< 0 of
+                true ->
+                    {error, invalid_amount};
+                false ->
+                    case find_vertex_by_label(State#state.unit_graph, string:strip(Rest)) of
+                        {error, _Reason} ->
+                            {error, unknown_unit};
+                        Vertex ->
+                            {Amount, Vertex}
+                    end
+            end
+    end,
+    {reply, Reply, State};
+
+handle_call({get_graph}, _From, State) ->
+    {reply, State#state.unit_graph, State};
+
 handle_call(_Msg, _From, State) -> {noreply, State}.
 
 handle_cast(_Msg, State) -> {noreply, State}.
@@ -129,6 +159,11 @@ code_change(_OldVsn, State, _Extra) -> {ok, State}.
 %%
 %% Private Functions
 %%
+add_plurals(Labels) ->
+    lists:foldl(fun(Label, LabelsWithPlurals) ->
+        LabelsWithPlurals ++ [Label, Label ++ "s", Label ++ "es"]
+    end, [], Labels).
+
 add_conversion(UnitGraph, FromUnit, To, AmtOfFromInTo) ->
     digraph:add_edge(UnitGraph, FromUnit, To, AmtOfFromInTo),
     digraph:add_edge(UnitGraph, To, FromUnit, 1 / AmtOfFromInTo).
@@ -168,6 +203,29 @@ do_in_context(Function, UnitGraph, Contexts, Ingredient) ->
 
     Reply.
 
+string_to_number(String) ->
+    case {string:to_float(String), string:to_integer(String)} of
+        {{error, _Reason}, {error, _Reason}} ->
+            {error, no_number};
+        {{Float, Rest}, {error, _Reason}} ->
+            {Float, Rest};
+        {{error, _Reason}, {Integer, Rest}} ->
+            {Integer, Rest};
+        {{Float, Rest}, {_Integer, _Rest}} ->
+            {Float, Rest}
+    end.
+
+find_vertex_by_label(UnitGraph, Label) ->
+    lists:foldl(fun(Vertex, TheVertex) ->
+        {Vertex, Labels} = digraph:vertex(UnitGraph, Vertex),
+        case lists:member(Label, Labels) of
+            true ->
+                Vertex;
+            false ->
+                TheVertex
+        end
+    end, {error, vertex_not_found}, digraph:vertices(UnitGraph)).
+
 
 
 %%
@@ -178,7 +236,7 @@ get_appropriate_conversions_test_() -> [
     ?_assertEqual([cup,dash,floz,gal,liter,ml,pinch,pint,quart,tbsp,tsp], wfd_unit_server:get_appropriate_conversions(tsp))},
 
     {"All weights",
-    ?_assertEqual([g,kg,lbs,oz], wfd_unit_server:get_appropriate_conversions(oz))},
+    ?_assertEqual([g,kg,lb,oz], wfd_unit_server:get_appropriate_conversions(oz))},
 
     {"Handles invalid unit",
     ?_assertEqual([foo], wfd_unit_server:get_appropriate_conversions(foo))},
@@ -218,3 +276,52 @@ convert_test_() -> [
     {"Specifying an ingredient doesn't permanently alter the unit graph",
     ?_assertEqual({error, invalid_conversion}, wfd_unit_server:convert({1, kg}, floz))}
 ].
+
+parse_test_() ->
+    UnitGraph = wfd_unit_server:get_graph(),
+    AllLabels = lists:sort(lists:foldl(fun(Vertex, LabelsAcc) ->
+        {Vertex, Labels} = digraph:vertex(UnitGraph, Vertex),
+        LabelsAcc ++ Labels
+    end, [], digraph:vertices(UnitGraph))),
+    AllLabelsSet = lists:sort(sets:to_list(sets:from_list(AllLabels))),
+
+    [
+        {"All unit labels are unique",
+        ?_assertEqual(AllLabels, AllLabelsSet)},
+
+        {"Parses valid, expected amount/unit",
+        ?_assertEqual({1, tsp}, wfd_unit_server:parse("1 tsp"))},
+
+        {"Parses valid, expected amount/unit with full unit name",
+        ?_assertEqual({1, tsp}, wfd_unit_server:parse("1 teaspoon"))},
+
+        {"Parses valid, expected amount/unit with plural unit name",
+        ?_assertEqual({2, tsp}, wfd_unit_server:parse("2 tsps"))},
+
+        {"Parses valid, expected amount/unit with plural full unit name",
+        ?_assertEqual({2, tsp}, wfd_unit_server:parse("2 teaspoons"))},
+
+        {"Parses valid, expected amount/unit with special plural name",
+        ?_assertEqual({2, box}, wfd_unit_server:parse("2 boxes"))},
+
+        {"Handles weird spacing",
+        ?_assertEqual({1, tsp}, wfd_unit_server:parse("  1tsp    "))},
+
+        {"Handles floating point amounts",
+        ?_assertEqual({1.5, tsp}, wfd_unit_server:parse("1.5 tsp"))},
+
+        {"Fails to parse zero amounts",
+        ?_assertEqual({error, invalid_amount}, wfd_unit_server:parse("0 tsp"))},
+
+        {"Fails to parse negative amounts",
+        ?_assertEqual({error, invalid_amount}, wfd_unit_server:parse("-1 tsp"))},
+
+        {"Parses unitless amount",
+        ?_assertEqual({1, count}, wfd_unit_server:parse("1"))},
+
+        {"Fails to parse amountless unit",
+        ?_assertEqual({error, no_amount}, wfd_unit_server:parse("tsp"))},
+
+        {"Fails to parse unknown unit",
+        ?_assertEqual({error, unknown_unit}, wfd_unit_server:parse("1 foo"))}
+    ].
