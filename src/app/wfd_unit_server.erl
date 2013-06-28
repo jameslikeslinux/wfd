@@ -19,7 +19,7 @@
 -module(wfd_unit_server).
 -author("James Lee <jlee@thestaticvoid.com>").
 -behaviour(gen_server).
--export([start_link/0, get_appropriate_conversions/1, get_appropriate_conversions/2, convert/2, convert/3, parse/1, get_graph/0]).
+-export([start_link/0, get_appropriate_conversions/1, get_appropriate_conversions/2, convert/2, convert/3, parse/1, to_string/1, get_graph/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -include_lib("eunit/include/eunit.hrl").
@@ -40,14 +40,17 @@ get_appropriate_conversions(FromUnit) ->
 get_appropriate_conversions(FromUnit, Ingredient) ->
     gen_server:call(?MODULE, {get_appropriate_conversions, FromUnit, Ingredient}).
 
-convert(Amount, ToUnit) ->
-    convert(Amount, ToUnit, "").
+convert({Amount, Unit}, ToUnit) ->
+    convert({Amount, Unit}, ToUnit, "").
 
-convert(Amount, ToUnit, Ingredient) ->
-    gen_server:call(?MODULE, {convert, Amount, ToUnit, Ingredient}).
+convert({Amount, Unit}, ToUnit, Ingredient) ->
+    gen_server:call(?MODULE, {convert, {Amount, Unit}, ToUnit, Ingredient}).
 
 parse(String) ->
     gen_server:call(?MODULE, {parse, String}).
+
+to_string({Amount, Unit}) ->
+    gen_server:call(?MODULE, {to_string, {Amount, Unit}}).
 
 get_graph() ->
     gen_server:call(?MODULE, {get_graph}).
@@ -62,7 +65,7 @@ init([]) ->
     digraph:add_vertex(UnitGraph, tsp, add_plurals(["tsp", "t", "teaspoon"])),
     digraph:add_vertex(UnitGraph, tbsp, add_plurals(["tbsp", "T", "tablespoon"])),
     digraph:add_vertex(UnitGraph, floz, add_plurals(["fl oz", "fluid oz", "fluid ounce"])),
-    digraph:add_vertex(UnitGraph, cup, add_plurals(["cup", "c"])),
+    digraph:add_vertex(UnitGraph, cup, add_plurals(["cup", "c", "C"])),
     digraph:add_vertex(UnitGraph, pint, add_plurals(["pt", "pint"])),
     digraph:add_vertex(UnitGraph, quart, add_plurals(["qt", "quart"])),
     digraph:add_vertex(UnitGraph, gal, add_plurals(["gal", "gallon"])),
@@ -76,7 +79,7 @@ init([]) ->
     digraph:add_vertex(UnitGraph, kg, add_plurals(["kg", "kilogram"])),
 
     % Misc
-    digraph:add_vertex(UnitGraph, count, [""]),
+    digraph:add_vertex(UnitGraph, count, ["", "ct", "count"]),
     digraph:add_vertex(UnitGraph, box, add_plurals(["box"])),
     digraph:add_vertex(UnitGraph, stick, add_plurals(["stick"])),
     digraph:add_vertex(UnitGraph, pinch, add_plurals(["pinch", "pn"])),
@@ -144,6 +147,10 @@ handle_call({parse, String}, _From, State) ->
             end
     end,
     {reply, Reply, State};
+
+handle_call({to_string, {Amount, Unit}}, _From, State) ->
+    {_Vertex, [Label|_OtherLables]} = digraph:vertex(State#state.unit_graph, Unit),
+    {reply, string:strip(lists:flatten(io_lib:format("~p ~s", [Amount, Label]))), State};
 
 handle_call({get_graph}, _From, State) ->
     {reply, State#state.unit_graph, State};
@@ -333,3 +340,14 @@ parse_test_() ->
         {"Fails to parse unknown unit",
         ?_assertEqual({error, unknown_unit}, wfd_unit_server:parse("1 foo"))}
     ].
+
+to_string_test_() -> [
+    {"Converts amount/unit to string",
+    ?_assertEqual("1 tsp", wfd_unit_server:to_string({1, tsp}))},
+
+    {"Converts floating point amount/unit to string",
+    ?_assertEqual("1.5 cup", wfd_unit_server:to_string({1.5, cup}))},
+
+    {"Converts unitless amount to string",
+    ?_assertEqual("4", wfd_unit_server:to_string({4, count}))}
+].
