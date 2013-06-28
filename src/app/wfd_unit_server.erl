@@ -26,7 +26,7 @@
 -include_lib("stdlib/include/qlc.hrl").
 -include("wfd.hrl").
 
--record(state, {unit_graph, contexts}).
+-record(state, {unit_graph}).
 
 %%
 %% API
@@ -100,19 +100,12 @@ init([]) ->
     add_conversion(UnitGraph, oz, g, 0.035274),
     add_conversion(UnitGraph, g, kg, 1000),
 
-    Contexts = [
-        {"butter", tbsp, stick, 8},
-        {"salt", pinch, g, 4},
-        {"sugar", pinch, g, 6},
-        {"water", g, ml, 1}
-    ],
-
-    {ok, #state{unit_graph = UnitGraph, contexts = Contexts}}.
+    {ok, #state{unit_graph = UnitGraph}}.
 
 handle_call({get_appropriate_conversions, FromUnit, Ingredient}, _From, State) ->
     Reply = do_in_context(fun() ->
         lists:sort(digraph_utils:reachable([FromUnit], State#state.unit_graph))
-    end, State#state.unit_graph, State#state.contexts, Ingredient),
+    end, State#state.unit_graph, Ingredient),
 
     {reply, Reply, State};
 
@@ -125,7 +118,7 @@ handle_call({convert, {Amount, FromUnit}, ToUnit, Ingredient}, _From, State) ->
             Path ->
                 {ok, {path_cost(State#state.unit_graph, Path, Amount), ToUnit}}
         end
-    end, State#state.unit_graph, State#state.contexts, Ingredient),
+    end, State#state.unit_graph, Ingredient),
 
     {reply, Reply, State};
 
@@ -203,7 +196,14 @@ find_edge_cost(UnitGraph, FromUnit, ToUnit) ->
         end
     end, 1, Edges).
 
-do_in_context(Function, UnitGraph, Contexts, Ingredient) ->
+do_in_context(Function, UnitGraph, Ingredient) ->
+    Contexts = [
+        {"butter", tbsp, stick, 8},
+        {"salt", pinch, g, 4},
+        {"sugar", pinch, g, 6},
+        {"water", g, ml, 1}
+    ],
+
     % Add ingredient-specific conversions to the graph
     lists:foreach(fun({_Ingredient, From, To, AmtOfFromInTo}) ->
         add_conversion(UnitGraph, From, To, AmtOfFromInTo)
