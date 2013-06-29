@@ -21,7 +21,7 @@ test: compile
 	./rebar skip_deps=true ct
 
 run: compile
-	ERL_LIBS=deps:$(shell readlink -f ..) erl -sname wfd -boot start_sasl -config app.config -run wfd_app
+	ERL_LIBS=deps:$(shell readlink -f ..) erl -sname wfd-run -boot start_sasl -config app.config -run wfd_app
 
 rel: compile
 	cd rel; ../rebar generate

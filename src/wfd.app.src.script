@@ -1,0 +1,11 @@
+Version = string:strip(os:cmd("git rev-parse --short HEAD"), right, $\n),
+
+[
+    {application, wfd, [
+        {description, "What's for Dinner?"},
+        {vsn, Version},
+        {registered, [wfd_dish_server, wfd_dish_photo_server, wfd_ingredient_server, wfd_sup, wfd_unit_server, wfd_user_server]},
+        {applications, [kernel, stdlib, nprocreg, crypto, bcrypt, yaws]},
+        {mod, {wfd_app, []}}
+    ]
+}].
