@@ -72,6 +72,9 @@ test_register(Config) ->
 test_dishes(Config) ->
     0 = run_rspec(Config, "dishes_spec.rb").
 
+test_dish(Config) ->
+    0 = run_rspec(Config, "dish_spec.rb").
+
 
 %%
 %% Helper Functions

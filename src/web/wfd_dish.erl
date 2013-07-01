@@ -47,6 +47,35 @@ main() ->
             Page
     end.
 
+%%
+%% The jQuery Fileupload initialization must occur after the fileupload.js
+%% stuff is loaded.  This is kind of a tricky exercise in getting code
+%% to execute in the right order.  This function is called by the template
+%% to ensure it is put in the right place.
+%%
+js() -> "$(function() {
+    $('.restful_upload').fileupload({
+        start: function(e) {
+            $('#upload_buttons').hide();
+            $('.progress-bar').show();
+        },
+        stop: function(e, data) {
+            $('.progress-bar').hide();
+            $('#progress_bar').val(0);
+            $('#progress_bar').slider('refresh');
+            $('#upload_buttons').show();
+        },
+        progressall: function(e, data) {
+            var progress = parseInt(data.loaded / data.total * 100, 10);
+            $('#progress_bar').val(progress);
+            $('#progress_bar').slider('refresh');
+        },
+        done: function(e, data) {
+            page.uploadComplete();
+        }
+    });
+});".
+
 title() -> (wf:state(dish))#wfd_dish.name.
 
 header() -> #panel{data_fields = [{role, header}], body = [
@@ -58,29 +87,6 @@ content() ->
     Dish = wf:state(dish),
 
     wf:wire(#api{name = uploadComplete}),
-
-    wf:wire("$(function() {
-        $('.restful_upload').fileupload({
-            start: function(e) {
-                $('#upload_buttons').hide();
-                $('.progress-bar').show();  
-            },
-            stop: function(e, data) {
-                $('.progress-bar').hide();
-                $('#progress_bar').val(0);
-                $('#progress_bar').slider('refresh');
-                $('#upload_buttons').show();
-            },
-            progressall: function(e, data) {
-                var progress = parseInt(data.loaded / data.total * 100, 10);
-                $('#progress_bar').val(progress);
-                $('#progress_bar').slider('refresh');
-            },
-            done: function(e, data) {
-                page.uploadComplete();
-            }
-        });
-    });"),
 
     %%
     %% Generate ingredients list
@@ -161,10 +167,6 @@ footer() -> [
     ]},
 
     #panel{html_id = "photo_error_popup", data_fields = [{role, popup}], body = [
-%        #panel{data_fields = [{role, header}], body = [
-%            #h1{text = "Failed to Process Your Photo"}
-%        ]},
-
         #panel{data_fields = [{role, content}], body = [
             #h3{text = "Your image could not be processed.", class = "ui-title"},
             #p{text = "Maybe it was too large or in the wrong format."},

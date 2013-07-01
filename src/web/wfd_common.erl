@@ -64,10 +64,10 @@ protected_page(Roles) ->
 js() ->
     case ?test of
         true ->
-            "$(document).on('mobileinit', function() {"
-            "    $.mobile.defaultDialogTransition = 'none';"
-            "    $.mobile.defaultPageTransition = 'none';"
-            "});";
+            "$(document).on('mobileinit', function() {
+                $.mobile.defaultDialogTransition = 'none';
+                $.mobile.defaultPageTransition = 'none';
+            });";
         false ->
             ""
     end.
